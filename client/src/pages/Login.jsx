@@ -50,9 +50,7 @@ const Login = () => {
       >
         <div className="text-center mb-8">
           <Link to="/" className="inline-block">
-            <div className="w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-2xl leading-none">I</span>
-            </div>
+
             <h1 className="text-3xl font-bold text-text-primary tracking-tight">Welcome Back</h1>
             <p className="text-text-secondary mt-2">Sign in to continue your interview prep</p>
           </Link>

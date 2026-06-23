@@ -29,9 +29,7 @@ const Navbar = ({ toggleSidebar, sidebarOpen }) => {
         )}
         
         <Link to={user ? "/dashboard" : "/"} className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-            <span className="text-white font-bold text-lg leading-none">I</span>
-          </div>
+
           <span className="text-xl font-bold tracking-tight text-text-primary hidden sm:block">
             InterviewAce <span className="text-gradient">AI</span>
           </span>
