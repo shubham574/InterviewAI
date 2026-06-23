@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const { clerkMiddleware } = require('@clerk/express');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -17,9 +18,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
+app.use(clerkMiddleware());
 
 // Routes
-const authRoutes = require('./routes/auth.routes');
 const jobAnalysisRoutes = require('./routes/jobAnalysis.routes');
 const mcqRoutes = require('./routes/mcq.routes');
 const assessmentRoutes = require('./routes/assessment.routes');
@@ -30,7 +31,6 @@ const dashboardRoutes = require('./routes/dashboard.routes');
 const historyRoutes = require('./routes/history.routes');
 const studyRoutes = require('./routes/study.routes');
 
-app.use('/api/auth', authRoutes);
 app.use('/api/job-analysis', jobAnalysisRoutes);
 app.use('/api/mcqs', mcqRoutes);
 app.use('/api/assessments', assessmentRoutes);

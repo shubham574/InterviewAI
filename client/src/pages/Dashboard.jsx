@@ -15,10 +15,10 @@ import Card from '../components/ui/Card';
 import AnimatedCounter from '../components/ui/AnimatedCounter';
 import Loader from '../components/ui/Loader';
 import { getGradeColor, formatDate } from '../utils/helpers';
-import useAuth from '../hooks/useAuth';
+import { useUser } from '@clerk/clerk-react';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { data: response, isLoading } = useApiQuery('dashboardStats', API.DASHBOARD.STATS);
 
   if (isLoading) {
@@ -44,14 +44,14 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 md:p-8 border border-gray-200 bg-white/30 backdrop-blur-sm rounded-3xl shadow-sm">
       <SEOHead title="Dashboard" />
       
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-text-primary">Welcome back, {user?.name.split(' ')[0]} 👋</h1>
-          <p className="text-text-secondary mt-1">Here's an overview of your interview preparation.</p>
+          <h1 className="text-3xl font-bold text-text-primary">Welcome back, {user?.firstName || 'User'} 👋</h1>
+          <p className="text-text-secondary mt-2 text-lg">Here's your interview preparation progress.</p>
         </div>
         <div className="flex gap-3">
           <Link to="/job-analysis" className="bg-surface hover:bg-surface-hover border border-border px-4 py-2 rounded-lg text-sm font-medium transition-colors">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { 
   FiHome, 
@@ -36,11 +36,20 @@ const Sidebar = ({ isOpen, setSidebarOpen }) => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-0 pt-16 lg:pt-0 flex flex-col ${
+        className={`fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-0 flex flex-col ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1 scrollbar-thin">
+        {/* Logo Section */}
+        <div className="h-16 flex items-center px-6 border-b border-gray-200 mb-4 hidden lg:flex">
+          <Link to="/" className="flex items-center space-x-2">
+            <span className="text-xl font-bold tracking-tight text-text-primary">
+              InterviewAce
+            </span>
+          </Link>
+        </div>
+
+        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1 scrollbar-thin pt-20 lg:pt-0">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.path}

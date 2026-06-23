@@ -9,7 +9,7 @@ const asyncHandler = require('../utils/asyncHandler');
 // @route   GET /api/dashboard/stats
 // @access  Private
 exports.getStats = asyncHandler(async (req, res, next) => {
-  const userId = req.user.id;
+  const userId = req.auth.userId;
 
   // 1. Basic Counts
   const totalAssessments = await Assessment.countDocuments({ userId });

@@ -14,13 +14,13 @@ const Button = ({
   className = '',
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background';
+  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background hover:-translate-y-0.5 active:translate-y-0';
   
   const variants = {
-    primary: 'bg-gradient-primary text-white hover:opacity-90 focus:ring-primary/30 shadow-md shadow-primary/20 rounded-xl',
-    secondary: 'bg-white hover:bg-gray-50 text-text-primary border border-border rounded-xl shadow-sm',
-    danger: 'bg-error/10 text-error hover:bg-error/15 border border-error/20 rounded-xl',
-    ghost: 'hover:bg-gray-100 text-text-secondary hover:text-text-primary rounded-xl',
+    primary: 'bg-gradient-primary text-white hover:opacity-95 focus:ring-primary/30 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30',
+    secondary: 'bg-white hover:bg-gray-50 text-text-primary border border-gray-200 shadow-[0_2px_10px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_20px_rgb(0,0,0,0.08)]',
+    danger: 'bg-error text-white hover:bg-error/90 shadow-lg shadow-error/20 hover:shadow-xl hover:shadow-error/30',
+    ghost: 'hover:bg-gray-100 text-text-secondary hover:text-text-primary',
   };
 
   const sizes = {

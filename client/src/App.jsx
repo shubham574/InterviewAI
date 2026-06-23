@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './context/AuthContext';
 
 // Components
 import Layout from './components/layout/Layout';
@@ -38,30 +37,28 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Router>
-            <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Landing />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+        <Router>
+          <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-              {/* Protected Routes inside Layout */}
-              <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/job-analysis" element={<JobAnalysis />} />
-                <Route path="/mcq-generator" element={<MCQGenerator />} />
-                <Route path="/assessment/:id" element={<AssessmentTest />} />
-                <Route path="/interview-questions" element={<InterviewQuestions />} />
-                <Route path="/mock-interview" element={<MockInterview />} />
-                <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
-                <Route path="/history" element={<History />} />
-                <Route path="/profile" element={<Profile />} />
-              </Route>
-            </Routes>
-          </Router>
-        </AuthProvider>
+            {/* Protected Routes inside Layout */}
+            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/job-analysis" element={<JobAnalysis />} />
+              <Route path="/mcq-generator" element={<MCQGenerator />} />
+              <Route path="/assessment/:id" element={<AssessmentTest />} />
+              <Route path="/interview-questions" element={<InterviewQuestions />} />
+              <Route path="/mock-interview" element={<MockInterview />} />
+              <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/profile" element={<Profile />} />
+            </Route>
+          </Routes>
+        </Router>
       </QueryClientProvider>
     </ErrorBoundary>
   );

@@ -91,12 +91,11 @@ ${jobDescription}
 Calculate a match percentage and identify missing/matching skills.
 Return the output EXACTLY in the following JSON format without any markdown wrappers or extra text:
 {
-  "matchPercentage": 75,
-  "atsScore": 80,
+  "matchScore": 75,
+  "summary": "Brief 2-3 sentence summary of how well the candidate fits the role.",
   "missingSkills": ["Skill 1", "Skill 2"],
   "matchedSkills": ["Skill 3", "Skill 4"],
-  "recommendedSkills": ["Skill 5"],
-  "improvementSuggestions": ["Suggestion 1", "Suggestion 2"]
+  "recommendations": ["Actionable suggestion 1", "Actionable suggestion 2"]
 }
 `;
 

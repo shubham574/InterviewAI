@@ -11,10 +11,12 @@ const api = axios.create({
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  async (config) => {
+    if (window.Clerk && window.Clerk.session) {
+      const token = await window.Clerk.session.getToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -25,13 +27,12 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // If 401 unauthorized, redirect to login (unless we're already trying to login/register)
     if (error.response && error.response.status === 401) {
-      const isAuthEndpoint = error.config.url.includes('/auth/login') || error.config.url.includes('/auth/register');
-      if (!isAuthEndpoint) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+      // With Clerk, a 401 usually means token expired. Clerk handles token refresh,
+      // but if it truly fails, we can redirect or let Clerk handle it.
+      const isAuthEndpoint = error.config.url.includes('/auth');
+      if (!isAuthEndpoint && window.Clerk) {
+        window.Clerk.redirectToSignIn();
       }
     }
     return Promise.reject(error);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
 import { 
   FiMenu, FiX, FiBriefcase, FiList, FiMessageSquare, 
@@ -56,7 +57,6 @@ const AnimatedNumber = ({ end, duration = 2000, suffix = '' }) => {
 
 // ─── Main Landing Page Component ───
 const Landing = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   // Handle scroll for navbar shadow
@@ -67,7 +67,6 @@ const Landing = () => {
   }, []);
 
   const scrollToSection = (id) => {
-    setMobileMenuOpen(false);
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
@@ -96,45 +95,24 @@ const Landing = () => {
           </nav>
 
           {/* Auth Buttons */}
-          <div className="hidden lg:flex items-center space-x-4">
-            <Link to="/login" className="text-sm font-medium text-text-secondary hover:text-primary transition-colors">
-              Log In
-            </Link>
-            <Link to="/register" className="bg-gradient-accent text-white px-5 py-2.5 rounded-xl font-medium text-sm hover:opacity-90 transition-opacity shadow-md shadow-accent/20 hover-lift">
-              Get Started Free
-            </Link>
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <SignedIn>
+              <Link to="/dashboard" className="text-sm font-medium text-text-secondary hover:text-primary transition-colors">
+                Dashboard
+              </Link>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+            <SignedOut>
+              <Link to="/login" className="text-sm font-medium text-text-secondary hover:text-primary transition-colors">
+                Log In
+              </Link>
+              <Link to="/register" className="bg-gray-900 text-white px-6 py-2.5 rounded-full font-semibold text-sm hover:bg-gray-800 transition-all shadow-md hover-lift">
+                Get Started Free
+              </Link>
+            </SignedOut>
           </div>
 
-          {/* Mobile Menu Toggle */}
-          <button 
-            className="lg:hidden text-text-secondary hover:text-primary focus:outline-none p-2"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-          </button>
         </div>
-
-        {/* Mobile Dropdown Menu */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden absolute top-full left-0 right-0 bg-white border-b border-border-light shadow-lg overflow-hidden"
-            >
-              <div className="flex flex-col p-6 space-y-4">
-                <button onClick={() => scrollToSection('features')} className="text-left text-lg font-medium text-text-secondary hover:text-primary py-2 border-b border-border-light">Features</button>
-                <button onClick={() => scrollToSection('how-it-works')} className="text-left text-lg font-medium text-text-secondary hover:text-primary py-2 border-b border-border-light">How It Works</button>
-                <button onClick={() => scrollToSection('testimonials')} className="text-left text-lg font-medium text-text-secondary hover:text-primary py-2 border-b border-border-light">Testimonials</button>
-                <div className="flex flex-col space-y-3 pt-4">
-                  <Link to="/login" className="text-center text-lg font-medium text-text-secondary hover:text-primary py-2 border border-border rounded-xl">Log In</Link>
-                  <Link to="/register" className="text-center bg-gradient-accent text-white px-5 py-3 rounded-xl font-medium text-lg hover:opacity-90 shadow-md">Get Started Free</Link>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </header>
 
       {/* ─── 2. Hero Section ─── */}
@@ -179,20 +157,9 @@ const Landing = () => {
               
               <div className="mt-auto pt-24 flex flex-col items-center justify-center w-full">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
-                  <Link to="/register" className="w-full sm:w-auto bg-gradient-accent text-white px-6 py-2.5 rounded-lg font-medium text-sm hover:opacity-90 shadow-md shadow-accent/20 hover-lift text-center flex items-center justify-center">
+                  <Link to="/register" className="w-full sm:w-auto bg-white text-gray-900 px-8 py-3.5 rounded-full font-bold text-base hover:bg-gray-100 shadow-xl shadow-black/10 hover-lift text-center flex items-center justify-center transition-all">
                     Start Free Trial <FiArrowRight className="ml-2" />
                   </Link>
-                </div>
-                
-                <div className="mt-8 flex items-center justify-center gap-4 text-sm text-text-muted">
-                  <div className="flex -space-x-2">
-                    {[1, 2, 3, 4].map(i => (
-                      <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-xs overflow-hidden">
-                        <img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="User" className="w-full h-full object-cover" />
-                      </div>
-                    ))}
-                  </div>
-                  <span>Join <strong>10,000+</strong> professionals</span>
                 </div>
               </div>
 
@@ -209,15 +176,13 @@ const Landing = () => {
           <p className="text-sm font-medium text-text-muted uppercase tracking-widest">Trusted by professionals preparing for top companies</p>
         </div>
         <div className="relative w-full flex overflow-x-hidden">
-          {/* We duplicate the logo set to create a seamless infinite scroll */}
-          <div className="flex animate-scroll-logos whitespace-nowrap opacity-60">
+          {/* We use a single w-max container with two sets to correctly translate -50% */}
+          <div className="flex w-max animate-scroll-logos opacity-60">
             {['Google', 'Microsoft', 'Amazon', 'Meta', 'Apple', 'Netflix', 'Spotify', 'Airbnb', 'Uber', 'Stripe'].map((company, i) => (
-              <span key={i} className="text-2xl font-bold text-text-secondary mx-12 font-display">{company}</span>
+              <span key={i} className="text-2xl font-bold text-text-secondary mx-12 font-display shrink-0">{company}</span>
             ))}
-          </div>
-          <div className="flex animate-scroll-logos whitespace-nowrap opacity-60 absolute top-0 left-full">
             {['Google', 'Microsoft', 'Amazon', 'Meta', 'Apple', 'Netflix', 'Spotify', 'Airbnb', 'Uber', 'Stripe'].map((company, i) => (
-              <span key={`dup-${i}`} className="text-2xl font-bold text-text-secondary mx-12 font-display">{company}</span>
+              <span key={`dup-${i}`} className="text-2xl font-bold text-text-secondary mx-12 font-display shrink-0">{company}</span>
             ))}
           </div>
           {/* Gradient masks for fading edges */}
@@ -241,51 +206,45 @@ const Landing = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Feature 1 */}
             <FeatureCard 
-              icon={FiBriefcase} 
-              color="text-indigo-600" 
-              bg="bg-indigo-100" 
-              title="Job Description Analysis"
-              description="AI analyzes job requirements, extracts key skills, and creates personalized 4-week prep roadmaps."
+              bg="bg-[#a6c1d1]" 
+              title="Job Analysis"
+              description="AI analyzes job requirements, extracts key skills, and creates personalized prep roadmaps."
+              tags={["Role Analysis", "Skill Extraction", "Roadmap"]}
             />
             {/* Feature 2 */}
             <FeatureCard 
-              icon={FiList} 
-              color="text-emerald-600" 
-              bg="bg-emerald-100" 
+              bg="bg-[#d8b598]" 
               title="MCQ Generator"
               description="Auto-generate role-specific MCQs with varying difficulty levels and detailed explanations."
+              tags={["Dynamic MCQs", "Explanations"]}
             />
             {/* Feature 3 */}
             <FeatureCard 
-              icon={FiMessageSquare} 
-              color="text-purple-600" 
-              bg="bg-purple-100" 
-              title="Interview Questions Bank"
+              bg="bg-[#9f94b1]" 
+              title="Questions Bank"
               description="Get curated interview questions with ideal answers, key points to cover, and common mistakes."
+              tags={["Curated Questions", "Ideal Answers"]}
             />
             {/* Feature 4 */}
             <FeatureCard 
-              icon={FiVideo} 
-              color="text-orange-600" 
-              bg="bg-orange-100" 
-              title="AI Mock Interviews"
+              bg="bg-[#9bb8a8]" 
+              title="Mock Interviews"
               description="Practice with our AI interviewer that evaluates your responses in real-time with actionable feedback."
+              tags={["Real-time Feedback", "AI Interviwer"]}
             />
             {/* Feature 5 */}
             <FeatureCard 
-              icon={FiFileText} 
-              color="text-pink-600" 
-              bg="bg-pink-100" 
+              bg="bg-[#f0c8c6]" 
               title="Resume Analyzer"
               description="Match your resume against job descriptions to find gaps, missing skills, and improvement areas."
+              tags={["Resume Matching", "Gap Analysis"]}
             />
             {/* Feature 6 */}
             <FeatureCard 
-              icon={FiTrendingUp} 
-              color="text-blue-600" 
-              bg="bg-blue-100" 
+              bg="bg-[#d1c8b0]" 
               title="Performance Dashboard"
               description="Track your progress with detailed analytics, topic strength charts, and readiness scores."
+              tags={["Analytics", "Readiness Score"]}
             />
           </div>
         </div>
@@ -488,19 +447,33 @@ const Landing = () => {
 
 // ─── Reusable Micro-components ───
 
-const FeatureCard = ({ icon: Icon, color, bg, title, description }) => {
+const FeatureCard = ({ bg, title, description, tags }) => {
   const [ref, isVisible] = useScrollReveal();
   
   return (
     <div 
       ref={ref}
-      className={`bg-white rounded-2xl p-8 border border-border-light shadow-sm hover:shadow-md transition-all duration-300 hover-lift ${isVisible ? 'animate-slide-up' : 'opacity-0'}`}
+      className={`rounded-[24px] p-8 flex flex-col h-full hover-lift shadow-sm ${bg} ${isVisible ? 'animate-slide-up' : 'opacity-0'} min-h-[320px]`}
     >
-      <div className={`w-14 h-14 rounded-xl ${bg} ${color} flex items-center justify-center mb-6`}>
-        <Icon size={28} />
+      <h3 className="text-[28px] font-bold font-display text-gray-900 mb-3 tracking-tight leading-tight">{title}</h3>
+      <p className="text-gray-800 text-base leading-relaxed mb-6 font-medium opacity-90">{description}</p>
+      
+      {tags && tags.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-8">
+          {tags.map((tag, i) => (
+            <span key={i} className="px-3.5 py-1.5 rounded-full text-[13px] font-semibold bg-black/5 text-gray-800">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+      
+      <div className="mt-auto flex items-center justify-between pt-2">
+        <span className="font-bold text-gray-900 text-[17px]">Explore</span>
+        <div className="w-10 h-10 rounded-[10px] bg-black/5 flex items-center justify-center text-gray-900 hover:bg-black/10 transition-colors">
+          <FiArrowRight size={20} />
+        </div>
       </div>
-      <h3 className="text-xl font-bold font-display text-text-primary mb-3">{title}</h3>
-      <p className="text-text-secondary leading-relaxed">{description}</p>
     </div>
   );
 };

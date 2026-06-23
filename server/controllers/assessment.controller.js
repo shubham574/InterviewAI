@@ -40,7 +40,7 @@ exports.submitAssessment = asyncHandler(async (req, res, next) => {
   const score = Math.round((correctAnswers / totalQuestions) * 100);
 
   const assessment = await Assessment.create({
-    userId: req.user.id,
+    userId: req.auth.userId,
     mcqSetId,
     jobRole: mcqSet.jobRole,
     score,
@@ -62,7 +62,7 @@ exports.submitAssessment = asyncHandler(async (req, res, next) => {
 // @route   GET /api/assessments
 // @access  Private
 exports.getAssessments = asyncHandler(async (req, res, next) => {
-  const assessments = await Assessment.find({ userId: req.user.id })
+  const assessments = await Assessment.find({ userId: req.auth.userId })
     .populate('mcqSetId', 'difficulty count')
     .sort('-createdAt');
 
@@ -84,7 +84,7 @@ exports.getAssessment = asyncHandler(async (req, res, next) => {
   }
 
   // Make sure user owns it
-  if (assessment.userId.toString() !== req.user.id) {
+  if (assessment.userId.toString() !== req.auth.userId) {
     return next(new ApiError(401, 'Not authorized to access this assessment'));
   }
 

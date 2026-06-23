@@ -283,7 +283,7 @@ const MockInterview = () => {
     const currentQ = activeInterview.questions[currentQIndex];
 
     return (
-      <div className="max-w-4xl mx-auto h-[calc(100vh-8rem)] flex flex-col">
+      <div className="max-w-4xl mx-auto w-full min-h-[calc(100vh-8rem)] flex flex-col">
         <SEOHead title={`Interview: ${activeInterview.jobRole}`} />
         
         {/* Header Progress */}
@@ -304,9 +304,10 @@ const MockInterview = () => {
         </div>
 
         {/* Question Card */}
-        <Card className="flex-1 flex flex-col p-6 md:p-10 mb-6">
-          <div className="mb-8">
-            <Badge variant="secondary" className="mb-4">
+        <Card className="flex-1 flex flex-col mb-6" padding="p-0">
+          <div className="flex-1 flex flex-col p-6 md:p-10 h-full">
+            <div className="mb-8">
+              <Badge variant="secondary" className="mb-4">
               {currentQ.category}
             </Badge>
             <h3 className="text-2xl md:text-3xl font-medium text-text-primary leading-tight">
@@ -350,6 +351,7 @@ const MockInterview = () => {
                 </div>
               </div>
             )}
+          </div>
           </div>
         </Card>
       </div>

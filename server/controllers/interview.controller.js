@@ -18,7 +18,7 @@ exports.generateQuestions = asyncHandler(async (req, res, next) => {
 
   // Save to database
   const questionSet = await InterviewQuestion.create({
-    userId: req.user.id,
+    userId: req.auth.userId,
     jobRole,
     category,
     questions: aiResult.questions,
@@ -34,7 +34,7 @@ exports.generateQuestions = asyncHandler(async (req, res, next) => {
 // @route   GET /api/interview
 // @access  Private
 exports.getQuestionSets = asyncHandler(async (req, res, next) => {
-  const sets = await InterviewQuestion.find({ userId: req.user.id })
+  const sets = await InterviewQuestion.find({ userId: req.auth.userId })
     .select('-questions') // Exclude questions for list view
     .sort('-createdAt');
 
@@ -56,7 +56,7 @@ exports.getQuestionSet = asyncHandler(async (req, res, next) => {
   }
 
   // Make sure user owns it
-  if (set.userId.toString() !== req.user.id) {
+  if (set.userId.toString() !== req.auth.userId) {
     return next(new ApiError(401, 'Not authorized to access this question set'));
   }
 
@@ -76,7 +76,7 @@ exports.deleteQuestionSet = asyncHandler(async (req, res, next) => {
     return next(new ApiError(404, 'Question set not found'));
   }
 
-  if (set.userId.toString() !== req.user.id) {
+  if (set.userId.toString() !== req.auth.userId) {
     return next(new ApiError(401, 'Not authorized to delete this question set'));
   }
 

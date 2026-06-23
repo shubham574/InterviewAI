@@ -29,7 +29,7 @@ exports.startInterview = asyncHandler(async (req, res, next) => {
   }));
 
   const mockInterview = await MockInterview.create({
-    userId: req.user.id,
+    userId: req.auth.userId,
     jobRole,
     totalQuestions,
     questions,
@@ -58,7 +58,7 @@ exports.submitAnswer = asyncHandler(async (req, res, next) => {
     return next(new ApiError(404, 'Mock interview not found'));
   }
 
-  if (interview.userId.toString() !== req.user.id) {
+  if (interview.userId.toString() !== req.auth.userId) {
     return next(new ApiError(401, 'Not authorized'));
   }
 
@@ -93,7 +93,7 @@ exports.completeInterview = asyncHandler(async (req, res, next) => {
   const interview = await MockInterview.findById(req.params.id);
 
   if (!interview) return next(new ApiError(404, 'Not found'));
-  if (interview.userId.toString() !== req.user.id) return next(new ApiError(401, 'Not authorized'));
+  if (interview.userId.toString() !== req.auth.userId) return next(new ApiError(401, 'Not authorized'));
 
   const responses = interview.responses;
   
@@ -142,7 +142,7 @@ exports.getInterview = asyncHandler(async (req, res, next) => {
   const interview = await MockInterview.findById(req.params.id);
   
   if (!interview) return next(new ApiError(404, 'Not found'));
-  if (interview.userId.toString() !== req.user.id) return next(new ApiError(401, 'Not authorized'));
+  if (interview.userId.toString() !== req.auth.userId) return next(new ApiError(401, 'Not authorized'));
 
   res.status(200).json({ success: true, data: interview });
 });
@@ -151,6 +151,6 @@ exports.getInterview = asyncHandler(async (req, res, next) => {
 // @route   GET /api/mock-interview
 // @access  Private
 exports.getInterviews = asyncHandler(async (req, res, next) => {
-  const interviews = await MockInterview.find({ userId: req.user.id }).sort('-createdAt');
+  const interviews = await MockInterview.find({ userId: req.auth.userId }).sort('-createdAt');
   res.status(200).json({ success: true, count: interviews.length, data: interviews });
 });

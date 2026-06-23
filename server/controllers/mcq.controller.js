@@ -18,7 +18,7 @@ exports.generateMCQSet = asyncHandler(async (req, res, next) => {
 
   // Save to database
   const mcqSet = await MCQ.create({
-    userId: req.user.id,
+    userId: req.auth.userId,
     jobRole,
     difficulty,
     count,
@@ -35,7 +35,7 @@ exports.generateMCQSet = asyncHandler(async (req, res, next) => {
 // @route   GET /api/mcqs
 // @access  Private
 exports.getMCQSets = asyncHandler(async (req, res, next) => {
-  const mcqSets = await MCQ.find({ userId: req.user.id })
+  const mcqSets = await MCQ.find({ userId: req.auth.userId })
     .select('-questions') // Don't send questions for list view
     .sort('-createdAt');
 
@@ -57,7 +57,7 @@ exports.getMCQSet = asyncHandler(async (req, res, next) => {
   }
 
   // Make sure user owns it
-  if (mcqSet.userId.toString() !== req.user.id) {
+  if (mcqSet.userId.toString() !== req.auth.userId) {
     return next(new ApiError(401, 'Not authorized to access this MCQ set'));
   }
 
@@ -77,7 +77,7 @@ exports.deleteMCQSet = asyncHandler(async (req, res, next) => {
     return next(new ApiError(404, 'MCQ set not found'));
   }
 
-  if (mcqSet.userId.toString() !== req.user.id) {
+  if (mcqSet.userId.toString() !== req.auth.userId) {
     return next(new ApiError(401, 'Not authorized to delete this MCQ set'));
   }
 

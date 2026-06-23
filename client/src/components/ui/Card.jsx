@@ -10,15 +10,15 @@ const Card = ({
   onClick,
   ...props
 }) => {
-  const baseStyles = 'rounded-xl overflow-hidden relative';
+  const baseStyles = 'rounded-3xl overflow-hidden relative transition-all duration-300';
   
   const variants = {
-    default: 'bg-white border border-gray-100 rounded-2xl shadow-sm transition-all duration-300',
-    solid: 'bg-surface border border-border rounded-2xl',
-    gradient: 'bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl shadow-sm',
+    default: 'bg-white/80 backdrop-blur-md border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]',
+    solid: 'bg-surface border border-border',
+    gradient: 'bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]',
   };
 
-  const hoverStyles = hover ? 'transition-all duration-300 hover:border-primary/50 hover:shadow-primary/10 hover:shadow-xl cursor-pointer group' : '';
+  const hoverStyles = hover ? 'hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] hover:border-primary/30 cursor-pointer group' : '';
 
   const CardWrapper = hover || onClick ? motion.div : 'div';
   const motionProps = (hover || onClick) ? {

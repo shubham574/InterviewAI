@@ -10,7 +10,7 @@ const ApiError = require('../utils/ApiError');
 // @route   GET /api/history
 // @access  Private
 exports.getHistory = asyncHandler(async (req, res, next) => {
-  const userId = req.user.id;
+  const userId = req.auth.userId;
   const { type = 'all', page = 1, limit = 20 } = req.query;
   const skip = (page - 1) * limit;
 
@@ -71,7 +71,7 @@ exports.getHistory = asyncHandler(async (req, res, next) => {
 // @access  Private
 exports.deleteHistoryItem = asyncHandler(async (req, res, next) => {
   const { type, id } = req.params;
-  const userId = req.user.id;
+  const userId = req.auth.userId;
 
   let model;
   switch (type) {

@@ -18,7 +18,7 @@ exports.analyzeJob = asyncHandler(async (req, res, next) => {
 
   // Save to database
   const analysis = await JobAnalysis.create({
-    userId: req.user.id,
+    userId: req.auth.userId,
     jobRole,
     jobDescription,
     experienceLevel,
@@ -39,7 +39,7 @@ exports.analyzeJob = asyncHandler(async (req, res, next) => {
 // @route   GET /api/job-analysis
 // @access  Private
 exports.getAnalyses = asyncHandler(async (req, res, next) => {
-  const analyses = await JobAnalysis.find({ userId: req.user.id }).sort('-createdAt');
+  const analyses = await JobAnalysis.find({ userId: req.auth.userId }).sort('-createdAt');
 
   res.status(200).json({
     success: true,
@@ -59,7 +59,7 @@ exports.getAnalysis = asyncHandler(async (req, res, next) => {
   }
 
   // Make sure user owns analysis
-  if (analysis.userId.toString() !== req.user.id) {
+  if (analysis.userId.toString() !== req.auth.userId) {
     return next(new ApiError(401, 'Not authorized to access this analysis'));
   }
 
@@ -80,7 +80,7 @@ exports.deleteAnalysis = asyncHandler(async (req, res, next) => {
   }
 
   // Make sure user owns analysis
-  if (analysis.userId.toString() !== req.user.id) {
+  if (analysis.userId.toString() !== req.auth.userId) {
     return next(new ApiError(401, 'Not authorized to delete this analysis'));
   }
 
