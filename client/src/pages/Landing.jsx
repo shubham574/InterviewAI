@@ -160,6 +160,12 @@ const Landing = () => {
                   <Link to="/register" className="w-full sm:w-auto bg-white text-gray-900 px-8 py-3.5 rounded-full font-bold text-base hover:bg-gray-100 shadow-xl shadow-black/10 hover-lift text-center flex items-center justify-center transition-all">
                     Start Free Trial <FiArrowRight className="ml-2" />
                   </Link>
+                  <a href="https://digitalheroesco.com" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto bg-transparent border-2 border-white text-white px-8 py-3.5 rounded-full font-bold text-base hover:bg-white/10 transition-all text-center">
+                    Built for Digital Heroes
+                  </a>
+                </div>
+                <div className="mt-8 text-white/90 text-sm">
+                  Created by <span className="font-bold text-white">Shubham Kumar Maurya</span> | <a href="mailto:shubhamm4975@gmail.com" className="hover:text-white underline">shubhamm4975@gmail.com</a>
                 </div>
               </div>
 
