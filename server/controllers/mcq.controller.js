@@ -7,6 +7,7 @@ const { generateMCQs } = require('../services/mcqGeneration.service');
 // @route   POST /api/mcqs/generate
 // @access  Private
 exports.generateMCQSet = asyncHandler(async (req, res, next) => {
+  console.log('--- REQ.AUTH DEBUG ---', req.auth);
   const { jobRole, skills, count, difficulty } = req.body;
 
   if (!jobRole || !skills || !count || !difficulty) {

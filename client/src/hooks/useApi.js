@@ -1,12 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
+import { useAuth } from '@clerk/clerk-react';
 
 export const useApiQuery = (key, url, options = {}) => {
+  const { getToken } = useAuth();
+  
   return useQuery({
     queryKey: Array.isArray(key) ? key : [key],
     queryFn: async () => {
-      const { data } = await api.get(url);
+      const token = await getToken();
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      const { data } = await api.get(url, config);
       return data;
     },
     ...options,
@@ -15,13 +20,17 @@ export const useApiQuery = (key, url, options = {}) => {
 
 export const useApiMutation = (url, method = 'post', options = {}) => {
   const queryClient = useQueryClient();
+  const { getToken } = useAuth();
 
   return useMutation({
     mutationFn: async (payload) => {
+      const token = await getToken();
       // Support for FormData (e.g. file uploads)
       const isFormData = payload instanceof FormData;
       
-      const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+      const config = { headers: {} };
+      if (token) config.headers.Authorization = `Bearer ${token}`;
+      if (isFormData) config.headers['Content-Type'] = 'multipart/form-data';
       
       const { data } = await api[method](url, payload, config);
       return data;

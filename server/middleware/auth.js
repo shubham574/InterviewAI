@@ -1,6 +1,16 @@
-const { requireAuth } = require('@clerk/express');
+const { getAuth } = require('@clerk/express');
+const ApiError = require('../utils/ApiError');
 
-// Export Clerk's requireAuth as 'protect' to maintain compatibility with existing route definitions
-const protect = requireAuth();
+const protect = (req, res, next) => {
+  const { userId } = getAuth(req);
+  
+  if (!userId) {
+    return next(new ApiError(401, 'Not authorized to access this route'));
+  }
+
+  // Ensure req.auth is populated for controllers
+  req.auth = getAuth(req);
+  next();
+};
 
 module.exports = { protect };
