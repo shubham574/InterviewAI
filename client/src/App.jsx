@@ -42,8 +42,8 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/login/*" element={<Login />} />
+            <Route path="/register/*" element={<Register />} />
 
             {/* Protected Routes inside Layout */}
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
@@ -55,7 +55,7 @@ function App() {
               <Route path="/mock-interview" element={<MockInterview />} />
               <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
               <Route path="/history" element={<History />} />
-              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/*" element={<Profile />} />
             </Route>
           </Routes>
         </Router>
