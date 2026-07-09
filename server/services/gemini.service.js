@@ -9,18 +9,12 @@ const generateContent = async (prompt, retries = 3) => {
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+        }
       });
       
-      let text = response.text;
-      
-      // Try to clean markdown formatting if present
-      if (text.startsWith('```json')) {
-        text = text.replace(/^```json\n/, '').replace(/\n```$/, '');
-      } else if (text.startsWith('```')) {
-        text = text.replace(/^```\n/, '').replace(/\n```$/, '');
-      }
-      
-      return JSON.parse(text);
+      return JSON.parse(response.text);
     } catch (error) {
       console.error(`Gemini API Attempt ${attempt} failed: ${error.message}`);
       if (attempt === retries) {
