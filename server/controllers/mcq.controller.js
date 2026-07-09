@@ -11,6 +11,7 @@ exports.generateMCQSet = asyncHandler(async (req, res, next) => {
   const { jobRole, skills, count, difficulty } = req.body;
 
   if (!jobRole || !skills || !count || !difficulty) {
+    console.error('Missing fields in MCQ Controller:', { jobRole, skills, count, difficulty });
     return next(new ApiError(400, 'Please provide job role, skills, count, and difficulty'));
   }
 

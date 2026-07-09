@@ -10,6 +10,7 @@ exports.generateQuestions = asyncHandler(async (req, res, next) => {
   const { jobRole, skills, category, count = 10 } = req.body;
 
   if (!jobRole || !skills || !category) {
+    console.error('Missing fields in Interview Controller:', { jobRole, skills, category });
     return next(new ApiError(400, 'Please provide job role, skills, and category'));
   }
 
