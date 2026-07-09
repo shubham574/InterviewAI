@@ -87,9 +87,7 @@ npm run dev
 *Client runs on http://localhost:5173*
 
 ## 🧪 Demo Login
-Want to test the app without signing up? Use our guest credentials:
-- **Email:** `demo@example.com`
-- **Password:** `password123`
+Want to test the app? Sign up for a free account—it takes under a minute!
 
 ## 📚 Documentation
 - [Architecture & Design](./docs/architecture.md)

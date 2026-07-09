@@ -29,7 +29,13 @@ jobs:
       run: |
         npm run test --if-present
 
-    - name: Server - Install Dependencies
+    - name: Client - Lint
+      working-directory: ./client
+      run: |
+        npm run lint
+
+    - name: Server - Install Dependencies and Test
       working-directory: ./server
       run: |
         npm ci || npm install
+        npm test
