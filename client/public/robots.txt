@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://interviewace.example.com/sitemap.xml
+Sitemap: https://interview-ai-ten-psi.vercel.app/sitemap.xml

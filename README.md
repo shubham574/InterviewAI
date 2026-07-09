@@ -8,7 +8,7 @@
   [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
   [![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)](https://expressjs.com/)
   
-  [Live Demo](https://interviewace.example.com) • [Architecture Docs](./docs/architecture.md) • [Case Study](./docs/case_study.md)
+  [Live Demo](https://interview-ai-ten-psi.vercel.app/) • [Architecture Docs](./docs/architecture.md) • [Case Study](./docs/case_study.md)
 </div>
 
 ---
