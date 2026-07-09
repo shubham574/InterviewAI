@@ -1,73 +1,67 @@
-# InterviewAce
+<div align="center">
+  <img src="./client/public/og-image.png" alt="InterviewAce Dashboard Mockup" width="800" />
 
-InterviewAce is an AI-powered platform designed to help candidates prepare for interviews by providing AI-generated questions, feedback, and performance tracking.
+  # InterviewAce
+  **Your AI-Powered Technical Interview Companion**
 
-## 🚀 Features
+  [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+  [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+  [![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)](https://expressjs.com/)
+  
+  [Live Demo](https://interviewace.example.com) • [Architecture Docs](./docs/architecture.md) • [Case Study](./docs/case_study.md)
+</div>
 
-- **AI-Powered Interviews:** Generates interview questions using Google's Gemini AI (`@google/genai`).
-- **Resume Parsing:** Upload and parse resumes (PDF) to tailor questions based on the candidate's experience.
-- **Secure Authentication:** Integrated with Clerk for robust and secure user authentication.
-- **Performance Analytics:** Visualizes your performance metrics using Recharts.
-- **Modern UI:** Built with React 19, Vite, and styled with Tailwind CSS v4 for a fast and beautiful interface.
-- **Robust Backend:** Express.js and MongoDB (Mongoose) architecture to handle data efficiently.
+---
 
-## 🛠️ Tech Stack
+## 🚀 The Pitch
+Technical interviews are stressful, unpredictable, and difficult to prepare for alone. **InterviewAce** solves this by providing a highly realistic, AI-driven mock interview environment. Upload your resume, and our system (powered by Google Gemini) instantly parses your experience to generate tailored, challenging technical questions. Practice in real-time, get immediate constructive feedback, and track your performance trends over time.
 
-### Client (Frontend)
-- **Framework:** React 19, Vite
-- **Styling:** Tailwind CSS v4, Framer Motion
-- **Routing:** React Router v7
-- **State/Data Fetching:** React Query, Axios
-- **Authentication:** Clerk React
-- **UI Components:** Recharts, React Dropzone, React Markdown, React Icons
+It's not just another generic quiz app; it's a personalized interview coach built on a robust, modern, full-stack architecture.
 
-### Server (Backend)
-- **Environment:** Node.js, Express 5
-- **Database:** MongoDB (Mongoose)
-- **AI Integration:** Google GenAI
-- **Authentication:** Clerk Express
-- **File Handling:** Multer, PDF-Parse
-- **Security & Utilities:** Helmet, CORS, Express Rate Limit, Morgan, dotenv
+## ✨ Key Features
+- **Smart Resume Parsing:** Upload a PDF resume; we extract the text and tailor the interview context to your actual experience.
+- **Dynamic AI Interviews:** Google's Gemini AI acts as the interviewer, providing relevant questions and grading your responses.
+- **Enterprise-Grade Security:** Fully integrated with Clerk for secure, seamless authentication (both client and server-side verification).
+- **Performance Analytics:** Visual tracking of your interview scores over time using interactive Recharts.
+- **Polished UI/UX:** Built with React 19, Vite, and Tailwind CSS v4, featuring smooth micro-animations via Framer Motion.
 
-## Getting Started
+## 💻 Tech Stack
+InterviewAce uses a modern, strictly separated client/server architecture.
 
-### Prerequisites
-- Node.js (v18 or higher recommended)
-- MongoDB Database
-- Clerk Account (for authentication)
-- Google Gemini API Key
+| Layer | Technology | Why we chose it |
+|-------|------------|-----------------|
+| **Frontend** | React 19 + Vite | Fast HMR, excellent developer experience, and modern concurrent features. |
+| **Styling** | Tailwind CSS v4 + Framer Motion | Utility-first styling for rapid, consistent UI development, plus robust animation primitives. |
+| **State & Data** | React Query + Axios | Powerful server-state management with built-in caching, retry, and deduplication logic. |
+| **Backend** | Express.js 5 + Node.js | Fast, unopinionated server framework. Express 5 brings better native Promise handling. |
+| **Database** | MongoDB + Mongoose | Flexible NoSQL document structure, ideal for rapidly iterating on user profiles and interview sessions. |
+| **AI Engine** | Google Gemini (`@google/genai`) | State-of-the-art LLM capabilities with excellent context window for parsing long resumes and maintaining conversation state. |
+| **Auth & Security** | Clerk, Helmet, CORS, Rate Limit | Clerk handles complex auth flows securely; Helmet and express-rate-limit protect against common web vulnerabilities. |
 
-### Installation
+## 🏁 Quick Start
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd InterviewAce
-   ```
+### 1. Clone & Install
+```bash
+git clone https://github.com/shubham574/InterviewAI.git
+cd InterviewAI
 
-2. **Install Client Dependencies:**
-   ```bash
-   cd client
-   npm install
-   ```
+# Install Client Dependencies
+cd client && npm install
 
-3. **Install Server Dependencies:**
-   ```bash
-   cd ../server
-   npm install
-   ```
+# Install Server Dependencies
+cd ../server && npm install
+```
 
-### Environment Variables
+### 2. Environment Variables
+You'll need two `.env` files.
 
-You'll need to set up environment variables for both the client and server.
-
-**Client (`client/.env`):**
+**`client/.env`**
 ```env
 VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 VITE_API_URL=http://localhost:5000
 ```
 
-**Server (`server/.env`):**
+**`server/.env`**
 ```env
 PORT=5000
 MONGODB_URI=your_mongodb_connection_string
@@ -75,22 +69,33 @@ CLERK_SECRET_KEY=your_clerk_secret_key
 GEMINI_API_KEY=your_gemini_api_key
 ```
 
-### Running the Application
+### 3. Run Locally
+Open two terminal windows:
 
-1. **Start the Backend Server:**
-   ```bash
-   cd server
-   npm run dev
-   ```
+**Terminal 1 (Backend):**
+```bash
+cd server
+npm run dev
+```
+*Server runs on http://localhost:5000*
 
-2. **Start the Frontend Development Server:**
-   ```bash
-   cd client
-   npm run dev
-   ```
+**Terminal 2 (Frontend):**
+```bash
+cd client
+npm run dev
+```
+*Client runs on http://localhost:5173*
 
-The client will typically run on `http://localhost:5173/` and the server on `http://localhost:5000/`.
+## 🧪 Demo Login
+Want to test the app without signing up? Use our guest credentials:
+- **Email:** `demo@example.com`
+- **Password:** `password123`
 
-## License
+## 📚 Documentation
+- [Architecture & Design](./docs/architecture.md)
+- [Project Case Study](./docs/case_study.md)
+- [Contributing Guidelines](./CONTRIBUTING.md)
+- [Changelog](./CHANGELOG.md)
 
-This project is licensed under the ISC License.
+## 📄 License
+This project is licensed under the [MIT License](./LICENSE).
