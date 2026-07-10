@@ -8,6 +8,7 @@ import { API } from '../api/endpoints';
 import SEOHead from '../components/common/SEOHead';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
 import Loader from '../components/ui/Loader';
 import Modal from '../components/ui/Modal';
 import AnimatedCounter from '../components/ui/AnimatedCounter';
