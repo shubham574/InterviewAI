@@ -13,7 +13,15 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:30001',
+    'http://localhost:5173',
+    process.env.CLIENT_URL,
+    'https://interview-ai-ten-psi.vercel.app',
+  ].filter(Boolean),
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet({

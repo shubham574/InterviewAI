@@ -5,8 +5,10 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.MONGODB_URI);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exit(1);
+    console.error(`MongoDB connection failed: ${error.message}`);
+    // Don't crash the server — it will retry on next request or
+    // mongoose will auto-reconnect when the network is available.
+    console.error('The server will continue running without a DB connection.');
   }
 };
 

@@ -2,15 +2,28 @@ const { getAuth } = require('@clerk/express');
 const ApiError = require('../utils/ApiError');
 
 const protect = (req, res, next) => {
-  const { userId } = getAuth(req);
-  
-  if (!userId) {
-    return next(new ApiError(401, 'Not authorized to access this route'));
-  }
+  try {
+    const auth = getAuth(req);
+    const userId = auth?.userId;
 
-  // Forcefully attach it as a plain object to avoid any getter/proxy issues
-  req.auth = { userId };
-  next();
+    console.log('--- AUTH DEBUG ---', {
+      userId,
+      isAuthenticated: auth?.isAuthenticated,
+      sessionId: auth?.sessionId,
+      hasAuthHeader: !!req.headers.authorization,
+    });
+
+    if (!userId) {
+      return next(new ApiError(401, 'Not authorized - please sign in'));
+    }
+
+    // Attach as a plain object so Mongoose can read it correctly
+    req.auth = { userId };
+    next();
+  } catch (err) {
+    console.error('Auth middleware error:', err.message);
+    return next(new ApiError(401, 'Authentication failed - please sign in again'));
+  }
 };
 
 module.exports = { protect };
