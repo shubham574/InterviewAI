@@ -31,6 +31,10 @@ export const useApiMutation = (url, method = 'post', options = {}) => {
       const config = { headers: {} };
       if (token) config.headers.Authorization = `Bearer ${token}`;
       if (isFormData) config.headers['Content-Type'] = 'multipart/form-data';
+
+      // Pass the custom Gemini API key if set
+      const geminiKey = localStorage.getItem('custom_gemini_key');
+      if (geminiKey) config.headers['x-gemini-api-key'] = geminiKey;
       
       const { data } = await api[method](url, payload, config);
       return data;
