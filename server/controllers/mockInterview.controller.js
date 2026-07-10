@@ -101,20 +101,25 @@ exports.completeInterview = asyncHandler(async (req, res, next) => {
     return next(new ApiError(400, 'Cannot complete empty interview'));
   }
 
-  // Calculate averages
+  // Calculate averages — AI returns scores 0-10, convert to 0-100%
   let totalScoreSum = 0;
   let allStrengths = [];
   let allWeaknesses = [];
 
   responses.forEach(resp => {
-    totalScoreSum += resp.aiEvaluation.overallScore;
-    allStrengths.push(...resp.aiEvaluation.strengths);
-    allWeaknesses.push(...resp.aiEvaluation.improvements);
+    // overallScore from Gemini is 0-10
+    totalScoreSum += (resp.aiEvaluation.overallScore || 0);
+    if (Array.isArray(resp.aiEvaluation.strengths)) {
+      allStrengths.push(...resp.aiEvaluation.strengths);
+    }
+    if (Array.isArray(resp.aiEvaluation.improvements)) {
+      allWeaknesses.push(...resp.aiEvaluation.improvements);
+    }
   });
 
-  const averageScore = Math.round(totalScoreSum / responses.length);
-  
-  // Just take top unique strengths/weaknesses
+  // Convert to 0-100 percentage
+  const averageScore = Math.round((totalScoreSum / responses.length) * 10);
+
   const uniqueStrengths = [...new Set(allStrengths)].slice(0, 5);
   const uniqueWeaknesses = [...new Set(allWeaknesses)].slice(0, 5);
 
@@ -124,14 +129,17 @@ exports.completeInterview = asyncHandler(async (req, res, next) => {
     averageScore,
     strengths: uniqueStrengths,
     weaknesses: uniqueWeaknesses,
-    recommendations: ['Practice more scenario questions', 'Work on confidence'],
+    recommendations: uniqueWeaknesses.length > 0
+      ? `Focus on improving: ${uniqueWeaknesses.slice(0, 2).join(' and ')}.`
+      : 'Keep practicing to maintain your performance!',
   };
 
   await interview.save();
 
+  // Return the FULL interview document so frontend has questions + responses
   res.status(200).json({
     success: true,
-    data: interview.overallFeedback,
+    data: interview,
   });
 });
 

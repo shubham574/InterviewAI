@@ -1,8 +1,7 @@
-const { createClient } = require('@deepgram/sdk');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 
-// @desc    Transcribe audio using Deepgram
+// @desc    Transcribe audio using Deepgram REST API
 // @route   POST /api/transcribe
 // @access  Private
 exports.transcribeAudio = asyncHandler(async (req, res, next) => {
@@ -15,32 +14,31 @@ exports.transcribeAudio = asyncHandler(async (req, res, next) => {
     return next(new ApiError(500, 'Transcription service not configured'));
   }
 
-  const deepgram = createClient(apiKey);
-
   try {
-    const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
-      req.file.buffer,
+    // Call Deepgram REST API directly — avoids SDK version issues
+    const response = await fetch(
+      'https://api.deepgram.com/v1/listen?model=nova-2&language=en-IN&smart_format=true&punctuate=true',
       {
-        model: 'nova-2',        // Best accuracy model
-        language: 'en-IN',      // Indian English
-        smart_format: true,     // Auto punctuation & formatting
-        punctuate: true,
-        diarize: false,
+        method: 'POST',
+        headers: {
+          Authorization: `Token ${apiKey}`,
+          'Content-Type': req.file.mimetype,
+        },
+        body: req.file.buffer,
       }
     );
 
-    if (error) {
-      console.error('Deepgram error:', error);
-      return next(new ApiError(502, 'Transcription service error'));
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Deepgram API error:', response.status, errText);
+      return next(new ApiError(502, 'Transcription service returned an error'));
     }
 
+    const data = await response.json();
     const transcript =
-      result?.results?.channels?.[0]?.alternatives?.[0]?.transcript || '';
+      data?.results?.channels?.[0]?.alternatives?.[0]?.transcript || '';
 
-    res.status(200).json({
-      success: true,
-      transcript,
-    });
+    res.status(200).json({ success: true, transcript });
   } catch (err) {
     console.error('Deepgram transcription failed:', err.message);
     return next(new ApiError(502, 'Failed to transcribe audio'));
