@@ -16,7 +16,8 @@ exports.generateMCQSet = asyncHandler(async (req, res, next) => {
   }
 
   // Call Gemini AI service
-  const aiResult = await generateMCQs(jobRole, skills, count, difficulty);
+  const customApiKey = req.headers['x-gemini-api-key'];
+  const aiResult = await generateMCQs(jobRole, skills, count, difficulty, customApiKey);
 
   // Save to database
   const mcqSet = await MCQ.create({

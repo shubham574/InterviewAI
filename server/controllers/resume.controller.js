@@ -28,7 +28,8 @@ exports.analyzeResumeMatch = asyncHandler(async (req, res, next) => {
     }
 
     // Call AI Service
-    const aiResult = await analyzeResume(resumeText, jobDescription);
+    const customApiKey = req.headers['x-gemini-api-key'];
+    const aiResult = await analyzeResume(resumeText, jobDescription, customApiKey);
 
     res.status(200).json({
       success: true,

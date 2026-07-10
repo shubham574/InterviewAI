@@ -1,9 +1,10 @@
 const { GoogleGenAI } = require('@google/genai');
 const { GEMINI_API_KEY } = require('../config/env');
 
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+const generateContent = async (prompt, customApiKey = null, retries = 3) => {
+  const apiKey = customApiKey || GEMINI_API_KEY;
+  const ai = new GoogleGenAI({ apiKey });
 
-const generateContent = async (prompt, retries = 3) => {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const response = await ai.models.generateContent({

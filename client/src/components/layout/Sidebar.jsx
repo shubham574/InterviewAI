@@ -9,8 +9,10 @@ import {
   FiMessageSquare, 
   FiVideo, 
   FiFileText, 
-  FiClock 
+  FiClock,
+  FiKey
 } from 'react-icons/fi';
+import ApiKeyModal from '../ui/ApiKeyModal';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', path: '/dashboard', icon: FiHome },
@@ -24,8 +26,11 @@ const NAV_ITEMS = [
 ];
 
 const Sidebar = ({ isOpen, setSidebarOpen }) => {
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = React.useState(false);
+
   return (
     <>
+      <ApiKeyModal isOpen={isApiKeyModalOpen} onClose={() => setIsApiKeyModalOpen(false)} />
       {/* Mobile backdrop */}
       {isOpen && (
         <div 
@@ -87,11 +92,18 @@ const Sidebar = ({ isOpen, setSidebarOpen }) => {
         
         <div className="p-4 border-t border-gray-200">
           <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl p-4 text-center">
-            <div className="text-xl mb-2">🚀</div>
-            <h4 className="text-sm font-bold text-text-primary mb-1">Pro Features</h4>
-            <p className="text-xs text-gray-500 mb-3">Unlock unlimited AI generations</p>
-            <button className="w-full bg-gradient-primary text-white text-xs font-bold py-2 rounded-lg hover:opacity-90 shadow-md shadow-primary/20 transition-all">
-              Upgrade
+            <div className="flex justify-center mb-2">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <FiKey className="w-5 h-5" />
+              </div>
+            </div>
+            <h4 className="text-sm font-bold text-text-primary mb-1">Bring Your Own Key</h4>
+            <p className="text-xs text-gray-500 mb-3">Add Gemini API key for unlimited AI usage</p>
+            <button 
+              onClick={() => setIsApiKeyModalOpen(true)}
+              className="w-full bg-gradient-primary text-white text-xs font-bold py-2 rounded-lg hover:opacity-90 shadow-md shadow-primary/20 transition-all"
+            >
+              Add API Key
             </button>
           </div>
         </div>

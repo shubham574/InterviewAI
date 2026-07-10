@@ -14,7 +14,8 @@ exports.analyzeJob = asyncHandler(async (req, res, next) => {
   }
 
   // Call Gemini AI service
-  const aiResult = await analyzeJobDescription(jobRole, jobDescription, experienceLevel);
+  const customApiKey = req.headers['x-gemini-api-key'];
+  const aiResult = await analyzeJobDescription(jobRole, jobDescription, experienceLevel, customApiKey);
 
   // Save to database
   const analysis = await JobAnalysis.create({

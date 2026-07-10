@@ -1,15 +1,17 @@
 const { GoogleGenAI } = require('@google/genai');
 const { GEMINI_API_KEY } = require('../config/env');
 
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-
 /**
  * Generate a study guide for a specific topic tailored to a job role
  * @param {string} topic - The topic to generate material for (e.g., 'React Hooks')
  * @param {string} jobRole - The target job role (e.g., 'Senior Frontend Developer')
+ * @param {string} customApiKey - Optional custom Gemini API key
  * @returns {Promise<string>} - Markdown formatted study guide
  */
-exports.generateStudyMaterial = async (topic, jobRole) => {
+exports.generateStudyMaterial = async (topic, jobRole, customApiKey = null) => {
+  const apiKey = customApiKey || GEMINI_API_KEY;
+  const ai = new GoogleGenAI({ apiKey });
+
   try {
     const prompt = `
       You are an expert technical interviewer and senior engineer mentoring a candidate.

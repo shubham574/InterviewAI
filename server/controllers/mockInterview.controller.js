@@ -16,11 +16,13 @@ exports.startInterview = asyncHandler(async (req, res, next) => {
 
   // We need to generate questions first
   // Let's use a mixed category approach
+  const customApiKey = req.headers['x-gemini-api-key'];
   const aiResult = await generateInterviewQuestions(
     jobRole, 
     ['general frontend', 'backend', 'soft skills'], // generic for mock
     'mixed technical and HR', 
-    totalQuestions
+    totalQuestions,
+    customApiKey
   );
 
   const questions = aiResult.questions.map(q => ({
@@ -69,7 +71,8 @@ exports.submitAnswer = asyncHandler(async (req, res, next) => {
   const question = interview.questions[questionIndex].question;
   
   // Call AI for evaluation
-  const evaluation = await evaluateAnswer(question, userAnswer);
+  const customApiKey = req.headers['x-gemini-api-key'];
+  const evaluation = await evaluateAnswer(question, userAnswer, customApiKey);
 
   // Add response to array
   interview.responses.push({

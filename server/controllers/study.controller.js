@@ -14,7 +14,8 @@ exports.generateMaterial = async (req, res) => {
       });
     }
 
-    const material = await generateStudyMaterial(topic, jobRole);
+    const customApiKey = req.headers['x-gemini-api-key'];
+    const material = await generateStudyMaterial(topic, jobRole, customApiKey);
 
     res.status(200).json({
       success: true,

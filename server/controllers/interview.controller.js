@@ -15,7 +15,8 @@ exports.generateQuestions = asyncHandler(async (req, res, next) => {
   }
 
   // Call Gemini AI service
-  const aiResult = await generateInterviewQuestions(jobRole, skills, category, count);
+  const customApiKey = req.headers['x-gemini-api-key'];
+  const aiResult = await generateInterviewQuestions(jobRole, skills, category, count, customApiKey);
 
   // Save to database
   const questionSet = await InterviewQuestion.create({

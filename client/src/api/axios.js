@@ -37,6 +37,13 @@ api.interceptors.request.use(
         console.warn('Failed to get Clerk token from interceptor:', e.message);
       }
     }
+    
+    // Add custom Gemini API Key if it exists
+    const geminiKey = localStorage.getItem('custom_gemini_key');
+    if (geminiKey) {
+      config.headers['x-gemini-api-key'] = geminiKey;
+    }
+
     return config;
   },
   (error) => Promise.reject(error)

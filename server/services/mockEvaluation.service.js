@@ -1,9 +1,9 @@
 const { generateContent } = require('./gemini.service');
 const { mockInterviewEvalPrompt } = require('../utils/prompts');
 
-const evaluateAnswer = async (question, userAnswer) => {
+const evaluateAnswer = async (question, userAnswer, customApiKey = null) => {
   const prompt = mockInterviewEvalPrompt(question, userAnswer);
-  const result = await generateContent(prompt);
+  const result = await generateContent(prompt, customApiKey);
   return result;
 };
 
