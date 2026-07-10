@@ -1,6 +1,17 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Auto-detect production vs development
+// If VITE_API_URL is set (e.g. from Vercel dashboard), use it.
+// Otherwise, if we are NOT on localhost, use the live Render backend.
+// Fall back to localhost only for local development.
+const isLocalhost = typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  (isLocalhost
+    ? 'http://localhost:5000/api'
+    : 'https://interviewai-backend-2n3q.onrender.com/api');
 
 const api = axios.create({
   baseURL: API_URL,
