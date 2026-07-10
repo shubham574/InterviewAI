@@ -5,6 +5,8 @@ import {
   FiVideo, FiMic, FiStopCircle, FiCheckCircle,
   FiPlay, FiArrowRight, FiAlertCircle, FiLoader,
 } from 'react-icons/fi';
+import Lottie from 'lottie-react';
+import interviewLoader from '../assets/interviewLoader.json';
 import { useApiMutation, useApiQuery } from '../hooks/useApi';
 import { API } from '../api/endpoints';
 import { MOCK_QUESTION_COUNTS } from '../utils/constants';
@@ -477,6 +479,19 @@ const MockInterview = () => {
   }
 
   // ── Setup screen ──────────────────────────────────────────────────────────
+  if (startMutation.isPending) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
+        <SEOHead title="Setting up Interview..." />
+        <div className="w-64 h-64 mb-4">
+          <Lottie animationData={interviewLoader} loop={true} />
+        </div>
+        <h2 className="text-xl font-bold text-text-primary animate-pulse">Preparing your interview...</h2>
+        <p className="text-text-secondary mt-2">Our AI is generating contextual questions for your role.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-8rem)]">
       <SEOHead title="Mock Interview" />
