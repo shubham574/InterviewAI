@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FiMessageSquare, FiChevronDown, FiChevronUp, FiList, FiClock, FiCheck } from 'react-icons/fi';
+import { FiMessageSquare, FiChevronDown, FiChevronUp, FiClock, FiCheck, FiDownload } from 'react-icons/fi';
+import ReactMarkdown from 'react-markdown';
+import html2pdf from 'html2pdf.js';
 import { useApiMutation, useApiQuery } from '../hooks/useApi';
 import { API } from '../api/endpoints';
 import { QUESTION_CATEGORIES } from '../utils/constants';
@@ -63,6 +65,38 @@ const InterviewQuestions = () => {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const [isDownloading, setIsDownloading] = useState(false);
+  const pdfContainerRef = useRef(null);
+
+  const handleDownloadPDF = async () => {
+    if (!activeSet) return;
+    setIsDownloading(true);
+    
+    const element = pdfContainerRef.current;
+    
+    const opt = {
+      margin:       10,
+      filename:     `${activeSet.jobRole}_Interview_Questions.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Need a slight delay to allow the DOM to update and render the hidden container if needed
+    setTimeout(async () => {
+      try {
+        // Temporarily make the hidden container block so html2canvas can read it
+        element.style.display = 'block';
+        await html2pdf().set(opt).from(element).save();
+      } catch (err) {
+        console.error("PDF generation failed", err);
+      } finally {
+        element.style.display = 'none';
+        setIsDownloading(false);
+      }
+    }, 100);
   };
 
   return (
@@ -185,12 +219,83 @@ const InterviewQuestions = () => {
                   <Badge variant="default">{activeSet.questions.length} Questions</Badge>
                 </div>
               </div>
-              <Button variant="secondary" onClick={() => setActiveSet(null)}>
-                Close
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="primary" 
+                  onClick={handleDownloadPDF} 
+                  loading={isDownloading}
+                  icon={FiDownload}
+                  className="bg-white/20 hover:bg-white/30 border-none text-white"
+                >
+                  Download PDF
+                </Button>
+                <Button variant="secondary" onClick={() => setActiveSet(null)}>
+                  Close
+                </Button>
+              </div>
             </Card>
 
-            {/* Questions List */}
+            {/* Hidden Container for PDF Export (renders everything expanded) */}
+            <div 
+              ref={pdfContainerRef} 
+              style={{ display: 'none', padding: '20px', background: '#fff', color: '#000' }}
+              className="pdf-export-container"
+            >
+              <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>
+                {activeSet.jobRole} Interview Questions
+              </h1>
+              <p style={{ marginBottom: '20px', color: '#666' }}>
+                Category: {activeSet.category.replace('-', ' ')}
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {activeSet.questions.map((q, qIndex) => (
+                  <div key={qIndex} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '16px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>
+                      <span style={{ color: '#4f46e5', marginRight: '8px' }}>Q{qIndex + 1}.</span> 
+                      {q.question}
+                    </h3>
+                    
+                    <div style={{ marginBottom: '16px' }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#4f46e5', textTransform: 'uppercase', marginBottom: '8px' }}>Ideal Answer</h4>
+                      <div style={{ padding: '12px', backgroundColor: '#f5f3ff', borderRadius: '8px', fontSize: '14px', lineHeight: '1.6' }}>
+                        <ReactMarkdown className="prose prose-sm max-w-none">
+                          {q.idealAnswer}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '20px' }}>
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#10b981', textTransform: 'uppercase', marginBottom: '8px' }}>Key Points to Cover</h4>
+                        <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {q.keyPoints.map((point, pIdx) => (
+                            <li key={pIdx} style={{ fontSize: '14px', display: 'flex', alignItems: 'flex-start' }}>
+                              <span style={{ color: '#10b981', marginRight: '8px' }}>•</span>
+                              <span>{point}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#ef4444', textTransform: 'uppercase', marginBottom: '8px' }}>Common Mistakes</h4>
+                        <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {q.commonMistakes.map((mistake, mIdx) => (
+                            <li key={mIdx} style={{ fontSize: '14px', display: 'flex', alignItems: 'flex-start' }}>
+                              <span style={{ color: '#ef4444', marginRight: '8px' }}>•</span>
+                              <span>{mistake}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Questions List (UI View) */}
             <div className="space-y-4">
               {activeSet.questions.map((q, qIndex) => (
                 <div key={qIndex} className="border border-border rounded-xl bg-surface overflow-hidden">
@@ -221,8 +326,8 @@ const InterviewQuestions = () => {
                           {/* Ideal Answer */}
                           <div>
                             <h4 className="text-sm font-bold text-primary uppercase tracking-wider mb-3">Ideal Answer</h4>
-                            <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 text-text-secondary leading-relaxed">
-                              {q.idealAnswer}
+                            <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 text-text-secondary leading-relaxed overflow-hidden prose prose-sm dark:prose-invert max-w-none">
+                              <ReactMarkdown>{q.idealAnswer}</ReactMarkdown>
                             </div>
                           </div>
                           

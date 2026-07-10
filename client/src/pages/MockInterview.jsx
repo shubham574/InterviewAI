@@ -448,12 +448,6 @@ const MockInterview = () => {
                     </div>
                   )}
 
-                  {/* Deepgram info badge */}
-                  <div className="flex items-center gap-1.5 text-xs text-text-muted">
-                    <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />
-                    Powered by Deepgram AI · Works in all browsers
-                  </div>
-
                   <div className="flex justify-between items-center pt-2">
                     <Button
                       variant={isRecording ? 'danger' : 'secondary'}
