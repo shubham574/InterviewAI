@@ -44,5 +44,6 @@ export const API = {
   },
   STUDY: {
     GENERATE: '/study/generate'
-  }
+  },
+  TRANSCRIBE: '/transcribe',
 };

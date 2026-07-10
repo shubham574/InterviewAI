@@ -1,7 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
-import { FiVideo, FiMic, FiMicOff, FiCheckCircle, FiPlay, FiStopCircle, FiArrowRight, FiAlertCircle } from 'react-icons/fi';
+import { motion } from 'motion/react';
+import {
+  FiVideo, FiMic, FiStopCircle, FiCheckCircle,
+  FiPlay, FiArrowRight, FiAlertCircle, FiLoader,
+} from 'react-icons/fi';
 import { useApiMutation, useApiQuery } from '../hooks/useApi';
 import { API } from '../api/endpoints';
 import { MOCK_QUESTION_COUNTS } from '../utils/constants';
@@ -17,96 +20,147 @@ import api from '../api/axios';
 import { useAuth } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
 
-// ─── Real Web Speech API Recorder ───────────────────────────────────────────
-const useVoiceRecorder = (setText) => {
-  const recognitionRef = useRef(null);
+// ─── Deepgram-powered voice recorder hook ────────────────────────────────────
+const useDeepgramRecorder = ({ onTranscript, getToken }) => {
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const streamRef = useRef(null);
+
   const [isRecording, setIsRecording] = useState(false);
-  const [isSupported, setIsSupported] = useState(true);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setIsSupported(false);
-      return;
+  const startRecording = useCallback(async () => {
+    setError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      // Pick best supported format
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : 'audio/ogg';
+
+      const recorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = recorder;
+      chunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        // Release mic
+        streamRef.current?.getTracks().forEach((t) => t.stop());
+
+        const blob = new Blob(chunksRef.current, { type: mimeType });
+        if (blob.size < 1000) {
+          // Too small — probably silence
+          setIsTranscribing(false);
+          return;
+        }
+
+        setIsTranscribing(true);
+        try {
+          const token = await getToken();
+          const formData = new FormData();
+          formData.append('audio', blob, 'recording.webm');
+
+          const { data } = await api.post(API.TRANSCRIBE, formData, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+
+          if (data.transcript) {
+            onTranscript(data.transcript);
+          } else {
+            toast('No speech detected. Please try again.', { icon: '🎙️' });
+          }
+        } catch (err) {
+          console.error('Transcription error:', err);
+          toast.error(
+            err.response?.data?.error || 'Failed to transcribe audio. Please type your answer.'
+          );
+        } finally {
+          setIsTranscribing(false);
+        }
+      };
+
+      recorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      if (err.name === 'NotAllowedError') {
+        setError('Microphone access denied. Please allow microphone access in your browser.');
+      } else {
+        setError(`Could not start recording: ${err.message}`);
+      }
     }
+  }, [getToken, onTranscript]);
 
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;        // Keep recording until stopped
-    recognition.interimResults = true;    // Show partial results while speaking
-    recognition.lang = 'en-US';
-
-    recognition.onresult = (event) => {
-      let transcript = '';
-      for (let i = 0; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
-      }
-      setText(transcript);
-    };
-
-    recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
-      if (event.error === 'not-allowed') {
-        toast.error('Microphone access denied. Please allow microphone in your browser settings.');
-      }
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
       setIsRecording(false);
-    };
-
-    recognition.onend = () => {
-      setIsRecording(false);
-    };
-
-    recognitionRef.current = recognition;
-    return () => recognition.abort();
-  }, [setText]);
-
-  const toggleRecording = useCallback(() => {
-    if (!recognitionRef.current) return;
-    if (isRecording) {
-      recognitionRef.current.stop();
-      setIsRecording(false);
-    } else {
-      try {
-        recognitionRef.current.start();
-        setIsRecording(true);
-      } catch (e) {
-        console.error('Recognition start error:', e);
-      }
     }
   }, [isRecording]);
 
-  return { isRecording, isSupported, toggleRecording };
+  const toggleRecording = useCallback(() => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  }, [isRecording, startRecording, stopRecording]);
+
+  return { isRecording, isTranscribing, error, toggleRecording };
 };
 
-// ─── Answer Input with voice indicator ──────────────────────────────────────
-const AnswerInput = ({ text, setText, isRecording }) => (
+// ─── Answer textarea with voice indicator ─────────────────────────────────────
+const AnswerInput = ({ text, setText, isRecording, isTranscribing }) => (
   <div className="w-full relative">
     <textarea
       id="answer"
       rows={6}
       placeholder={
         isRecording
-          ? '🎙️ Listening... speak your answer clearly'
-          : 'Type your answer here, or click "Dictate Answer" to use your voice...'
+          ? '🎙️ Recording... speak clearly, then click Stop Recording'
+          : isTranscribing
+          ? '⏳ Transcribing your speech...'
+          : 'Type your answer here, or click "Record Answer" to use your voice...'
       }
       value={text}
       onChange={(e) => setText(e.target.value)}
+      disabled={isTranscribing}
       className={`w-full px-4 py-3 rounded-xl border-2 bg-surface text-text-primary placeholder-text-muted resize-none transition-all duration-200 outline-none text-base leading-relaxed ${
         isRecording
-          ? 'border-error focus:border-error ring-2 ring-error/20'
+          ? 'border-error ring-2 ring-error/20'
+          : isTranscribing
+          ? 'border-warning ring-2 ring-warning/20 opacity-70'
           : 'border-border focus:border-primary focus:ring-2 focus:ring-primary/20'
       }`}
     />
+
     {isRecording && (
       <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-error/10 text-error px-2 py-1 rounded-lg text-xs font-medium animate-pulse pointer-events-none">
         <span className="w-2 h-2 rounded-full bg-error inline-block" />
         Recording
       </div>
     )}
+
+    {isTranscribing && (
+      <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-warning/10 text-warning px-2 py-1 rounded-lg text-xs font-medium pointer-events-none">
+        <FiLoader className="animate-spin" />
+        Transcribing…
+      </div>
+    )}
   </div>
 );
 
-// ─── Main Component ──────────────────────────────────────────────────────────
+// ─── Main Component ────────────────────────────────────────────────────────────
 const MockInterview = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -121,15 +175,23 @@ const MockInterview = () => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [finalResults, setFinalResults] = useState(null);
 
-  const { isRecording, isSupported, toggleRecording } = useVoiceRecorder(setCurrentAnswer);
+  // Append Deepgram transcript to the existing typed text
+  const handleTranscript = useCallback((transcript) => {
+    setCurrentAnswer((prev) =>
+      prev ? `${prev.trimEnd()} ${transcript}` : transcript
+    );
+  }, []);
 
-  // ── Fetch past interviews ──────────────────────────────────────────────────
+  const { isRecording, isTranscribing, error: recorderError, toggleRecording } =
+    useDeepgramRecorder({ onTranscript: handleTranscript, getToken });
+
+  // ── Fetch past interviews ─────────────────────────────────────────────────
   const { data: pastInterviews, isLoading: isPastLoading } = useApiQuery(
     'mockInterviews',
     API.MOCK.LIST
   );
 
-  // ── Start interview ────────────────────────────────────────────────────────
+  // ── Start interview ───────────────────────────────────────────────────────
   const startMutation = useApiMutation(API.MOCK.START, 'post', {
     onSuccess: (data) => {
       setActiveInterview(data.data);
@@ -144,11 +206,9 @@ const MockInterview = () => {
     startMutation.mutate({ jobRole, totalQuestions: Number(totalQuestions) });
   };
 
-  // ── Submit answer (calls /:id/answer directly via axios) ───────────────────
+  // ── Submit answer ─────────────────────────────────────────────────────────
   const handleSubmitAnswer = async () => {
     if (!currentAnswer.trim() || currentAnswer.trim().length < 10) return;
-
-    // Stop voice recording if active
     if (isRecording) toggleRecording();
 
     setIsEvaluating(true);
@@ -160,7 +220,6 @@ const MockInterview = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Attach response to local state
       const updatedInterview = {
         ...activeInterview,
         responses: [
@@ -174,7 +233,6 @@ const MockInterview = () => {
       };
       setActiveInterview(updatedInterview);
 
-      // Move to next question or complete
       if (currentQIndex < activeInterview.questions.length - 1) {
         setCurrentQIndex((prev) => prev + 1);
         setCurrentAnswer('');
@@ -183,15 +241,13 @@ const MockInterview = () => {
       }
     } catch (err) {
       console.error('Submit answer error:', err);
-      toast.error(
-        err.response?.data?.error || 'Failed to evaluate your answer. Please try again.'
-      );
+      toast.error(err.response?.data?.error || 'Failed to evaluate answer. Please try again.');
     } finally {
       setIsEvaluating(false);
     }
   };
 
-  // ── Complete interview ─────────────────────────────────────────────────────
+  // ── Complete interview ────────────────────────────────────────────────────
   const handleComplete = async (interviewData) => {
     try {
       const token = await getToken();
@@ -207,7 +263,7 @@ const MockInterview = () => {
     }
   };
 
-  // ── Results screen ─────────────────────────────────────────────────────────
+  // ── Results screen ────────────────────────────────────────────────────────
   if (finalResults) {
     return (
       <div className="max-w-5xl mx-auto space-y-6">
@@ -248,7 +304,7 @@ const MockInterview = () => {
           </Card>
 
           <Card className="col-span-2 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-lg font-bold text-success mb-3 flex items-center">
                   <span className="text-2xl mr-2">🌟</span> Key Strengths
@@ -328,16 +384,17 @@ const MockInterview = () => {
     );
   }
 
-  // ── Active Interview screen ────────────────────────────────────────────────
+  // ── Active interview screen ───────────────────────────────────────────────
   if (activeInterview) {
     const currentQ = activeInterview.questions[currentQIndex];
     const isLastQuestion = currentQIndex === activeInterview.questions.length - 1;
+    const canSubmit = currentAnswer.trim().length >= 10 && !isEvaluating && !isTranscribing;
 
     return (
       <div className="max-w-4xl mx-auto w-full min-h-[calc(100vh-8rem)] flex flex-col">
         <SEOHead title={`Interview: ${activeInterview.jobRole}`} />
 
-        {/* Progress bar */}
+        {/* Progress */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-xl font-bold text-text-primary">{activeInterview.jobRole} Interview</h2>
@@ -376,30 +433,41 @@ const MockInterview = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <AnswerInput text={currentAnswer} setText={setCurrentAnswer} isRecording={isRecording} />
+                  <AnswerInput
+                    text={currentAnswer}
+                    setText={setCurrentAnswer}
+                    isRecording={isRecording}
+                    isTranscribing={isTranscribing}
+                  />
 
-                  {/* Voice not supported warning */}
-                  {!isSupported && (
-                    <div className="flex items-center gap-2 text-xs text-warning">
-                      <FiAlertCircle />
-                      Voice dictation is not supported in this browser. Please use Chrome or Edge and type your answer.
+                  {/* Recorder error */}
+                  {recorderError && (
+                    <div className="flex items-start gap-2 text-sm text-error bg-error/5 border border-error/20 p-3 rounded-lg">
+                      <FiAlertCircle className="mt-0.5 flex-shrink-0" />
+                      <span>{recorderError}</span>
                     </div>
                   )}
+
+                  {/* Deepgram info badge */}
+                  <div className="flex items-center gap-1.5 text-xs text-text-muted">
+                    <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />
+                    Powered by Deepgram AI · Works in all browsers
+                  </div>
 
                   <div className="flex justify-between items-center pt-2">
                     <Button
                       variant={isRecording ? 'danger' : 'secondary'}
                       onClick={toggleRecording}
                       icon={isRecording ? FiStopCircle : FiMic}
-                      disabled={!isSupported}
+                      disabled={isTranscribing || isEvaluating}
                     >
-                      {isRecording ? 'Stop Recording' : 'Dictate Answer'}
+                      {isRecording ? 'Stop Recording' : 'Record Answer'}
                     </Button>
 
                     <Button
                       variant="primary"
                       onClick={handleSubmitAnswer}
-                      disabled={currentAnswer.trim().length < 10 || isEvaluating}
+                      disabled={!canSubmit}
                       icon={FiArrowRight}
                     >
                       {isLastQuestion ? 'Finish Interview' : 'Submit & Next'}
@@ -414,7 +482,7 @@ const MockInterview = () => {
     );
   }
 
-  // ── Setup / Start View ────────────────────────────────────────────────────
+  // ── Setup screen ──────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-8rem)]">
       <SEOHead title="Mock Interview" />
@@ -424,7 +492,7 @@ const MockInterview = () => {
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Mock Interview</h1>
           <p className="text-text-secondary mt-1">
-            Practice with an AI interviewer. Speak or type your answers and get instant feedback.
+            Practice with an AI interviewer. Speak or type your answers and get instant AI feedback.
           </p>
         </div>
 
@@ -462,14 +530,15 @@ const MockInterview = () => {
         </Card>
 
         <Card className="bg-surface-hover/50 border-none">
-          <h4 className="font-bold text-text-primary mb-2 flex items-center">
+          <h4 className="font-bold text-text-primary mb-3 flex items-center">
             <FiVideo className="mr-2 text-primary" /> How it works
           </h4>
           <ul className="space-y-2 text-sm text-text-secondary">
             <li>• AI generates contextual questions for your role</li>
-            <li>• Type or speak your answers naturally</li>
-            <li>• AI evaluates technical accuracy &amp; confidence</li>
-            <li>• Get a detailed report with strengths &amp; weaknesses</li>
+            <li>• Click <strong>Record Answer</strong> and speak naturally</li>
+            <li>• Deepgram AI transcribes your speech (supports Indian English)</li>
+            <li>• Gemini AI evaluates your technical accuracy &amp; confidence</li>
+            <li>• Get a full report with strengths &amp; improvements</li>
           </ul>
         </Card>
       </div>
@@ -508,7 +577,7 @@ const MockInterview = () => {
                         {interview.questions?.length} Questions
                       </p>
                     </div>
-                    <div className="text-right flex items-center gap-3">
+                    <div className="flex items-center gap-3">
                       {interview.status === 'completed' ? (
                         <>
                           <div className="text-right hidden sm:block">
