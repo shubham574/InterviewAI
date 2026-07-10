@@ -65,9 +65,8 @@ const AssessmentTest = () => {
     return () => clearInterval(timer);
   }, [isTestStarted, isTestFinished, timeLeft]);
 
-  // Start Test Setup
   const handleStartTest = () => {
-    if (!mcqSet) return;
+    if (!mcqSet || !mcqSet.questions) return;
     // Set time: 1.5 minutes per question
     const totalSeconds = mcqSet.questions.length * 90;
     setTimeLeft(totalSeconds);
@@ -131,6 +130,17 @@ const AssessmentTest = () => {
   // Loading State
   if (isLoading || !mcqSet) return <Loader fullScreen />;
 
+  // Empty Data State
+  if (!mcqSet.questions || mcqSet.questions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <h2 className="text-2xl font-bold text-text-primary mb-4">No Questions Available</h2>
+        <p className="text-text-secondary mb-6">There was an error generating the questions for this assessment.</p>
+        <Button onClick={() => navigate('/mcq-generator')}>Generate New Questions</Button>
+      </div>
+    );
+  }
+
   // Start Screen
   if (!isTestStarted && !isTestFinished) {
     return (
@@ -144,11 +154,11 @@ const AssessmentTest = () => {
           <div className="grid grid-cols-2 gap-4 mb-10 text-left max-w-sm mx-auto">
             <div className="bg-surface-hover p-4 rounded-xl border border-border">
               <p className="text-text-secondary text-sm">Total Questions</p>
-              <p className="text-2xl font-bold text-text-primary">{mcqSet.questions.length}</p>
+              <p className="text-2xl font-bold text-text-primary">{mcqSet?.questions?.length || 0}</p>
             </div>
             <div className="bg-surface-hover p-4 rounded-xl border border-border">
               <p className="text-text-secondary text-sm">Time Limit</p>
-              <p className="text-2xl font-bold text-text-primary">{Math.round(mcqSet.questions.length * 1.5)} Mins</p>
+              <p className="text-2xl font-bold text-text-primary">{Math.round((mcqSet?.questions?.length || 0) * 1.5)} Mins</p>
             </div>
           </div>
 

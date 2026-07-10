@@ -68,11 +68,8 @@ const MCQGenerator = () => {
 
   const viewSavedSet = async (id) => {
     try {
-      // In a real app, we'd fetch the full details since the list API excludes questions
-      const res = await fetch(API.MCQ.GET(id), {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      const data = await res.json();
+      // Use the query API hook's fetcher logic via axios to ensure credentials are sent
+      const { data } = await import('../api/axios').then(m => m.default.get(API.MCQ.GET(id)));
       setActiveMCQSet(data.data);
       setRevealedAnswers({});
     } catch (err) {
