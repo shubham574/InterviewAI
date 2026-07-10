@@ -25,6 +25,18 @@ const errorHandler = (err, req, res, next) => {
     error = new ApiError(400, message);
   }
 
+  // Mongoose buffering timeout (DB not connected)
+  if (err.name === 'MongooseError' && err.message.includes('buffering timed out')) {
+    const message = 'Database is temporarily unavailable. Please try again in a moment.';
+    error = new ApiError(503, message);
+  }
+
+  // MongoDB server errors (connection refused, etc.)
+  if (err.name === 'MongoServerError' || err.name === 'MongoNetworkError') {
+    const message = 'Database connection error. Please try again in a moment.';
+    error = new ApiError(503, message);
+  }
+
   // JWT errors
   if (err.name === 'JsonWebTokenError') {
     const message = 'Not authorized to access this route';

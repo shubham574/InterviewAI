@@ -4,7 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const { clerkMiddleware } = require('@clerk/express');
-const connectDB = require('./config/db');
+const { connectDB, isDBConnected } = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 
 // Connect to database
@@ -52,7 +52,11 @@ app.use('/api/history', historyRoutes);
 app.use('/api/study', studyRoutes);
 
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'success', message: 'Server is running' });
+  res.status(200).json({
+    status: 'success',
+    message: 'Server is running',
+    database: isDBConnected() ? 'connected' : 'disconnected',
+  });
 });
 
 // Error Handler Middleware
