@@ -10,7 +10,8 @@ import {
   FiVideo, 
   FiFileText, 
   FiClock,
-  FiKey
+  FiKey,
+  FiRadio,
 } from 'react-icons/fi';
 import ApiKeyModal from '../ui/ApiKeyModal';
 
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   // Hide assessment test from sidebar as it should only be accessed via MCQ Generator
   { label: 'Interview Questions', path: '/interview-questions', icon: FiMessageSquare },
   { label: 'Mock Interview', path: '/mock-interview', icon: FiVideo },
+  { label: 'Live Interview', path: '/live-interview', icon: FiRadio },
   { label: 'Resume Analyzer', path: '/resume-analyzer', icon: FiFileText },
   { label: 'History', path: '/history', icon: FiClock },
 ];

@@ -99,10 +99,68 @@ Return the output EXACTLY in the following JSON format without any markdown wrap
 }
 `;
 
+const liveInterviewQuestionsPrompt = (jobRole, jobDescription, count) => `
+You are generating interview questions for a live AI interview session.
+Job Role: ${jobRole}
+Job Description:
+${jobDescription}
+
+Generate exactly ${count} interview questions that are specifically tailored to this job description and role.
+Include a mix of: technical questions (based on JD skills), behavioral questions, and situational questions.
+
+Return the output EXACTLY in the following JSON format without any markdown wrappers or extra text:
+{
+  "questions": [
+    {
+      "question": "The interview question?",
+      "category": "Technical / Behavioral / Situational",
+      "difficulty": "Easy / Medium / Hard",
+      "keyPoints": ["What a good answer should cover point 1", "point 2"]
+    }
+  ]
+}
+`;
+
+const liveAnswerEvalPrompt = (question, userAnswer, jobRole, attempt, previousAnswer) => `
+You are Shristi, a professional and empathetic AI interviewer conducting a live interview for a ${jobRole} position.
+Your personality: warm, encouraging but honest, professional.
+
+Interview Question: "${question}"
+Candidate's Answer (Attempt ${attempt}): "${userAnswer}"
+${previousAnswer ? `Previous attempt answer: "${previousAnswer}"` : ''}
+
+Evaluate the answer and respond naturally as Shristi would in a real interview.
+
+Scoring criteria:
+- Score 7-10: Answer is good — acknowledge and move on
+- Score 4-6: Partially correct — give a gentle hint and ask to elaborate
+- Score 0-3: Poor/off-topic — be kind but redirect with a more specific prompt
+
+IMPORTANT RULES:
+- If this is attempt 2 or more AND score < 7, set action to "next" regardless (don't keep retrying forever)
+- "shristiResponse" must be a natural spoken sentence Shristi says out loud (1-3 sentences max, conversational)
+- For "retry": shristiResponse should give a specific hint without giving the answer away
+- For "next": shristiResponse should acknowledge the answer and transition naturally
+- For "followup": only use if score >= 7 but you want to dig deeper (optional)
+
+Return EXACTLY this JSON without any markdown or extra text:
+{
+  "score": 7,
+  "isPassing": true,
+  "action": "next",
+  "shristiResponse": "Great answer! You covered the key points well. Let's move on to the next question.",
+  "feedback": "Detailed internal feedback for the results page (not spoken aloud)",
+  "strengths": ["strength 1", "strength 2"],
+  "improvements": ["area to improve 1"]
+}
+`;
+
 module.exports = {
   jdAnalysisPrompt,
   mcqGenerationPrompt,
   interviewQuestionsPrompt,
   mockInterviewEvalPrompt,
   resumeAnalysisPrompt,
+  liveInterviewQuestionsPrompt,
+  liveAnswerEvalPrompt,
 };

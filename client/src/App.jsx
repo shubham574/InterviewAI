@@ -21,6 +21,7 @@ import MockInterview from './pages/MockInterview';
 import ResumeAnalyzer from './pages/ResumeAnalyzer';
 import History from './pages/History';
 import Profile from './pages/Profile';
+import LiveInterview from './pages/LiveInterview';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -53,6 +54,7 @@ function App() {
               <Route path="/assessment/:id" element={<AssessmentTest />} />
               <Route path="/interview-questions" element={<InterviewQuestions />} />
               <Route path="/mock-interview" element={<MockInterview />} />
+              <Route path="/live-interview" element={<LiveInterview />} />
               <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
               <Route path="/history" element={<History />} />
               <Route path="/profile/*" element={<Profile />} />

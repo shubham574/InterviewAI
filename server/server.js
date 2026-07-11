@@ -41,6 +41,7 @@ const dashboardRoutes = require('./routes/dashboard.routes');
 const historyRoutes = require('./routes/history.routes');
 const studyRoutes = require('./routes/study.routes');
 const transcriptionRoutes = require('./routes/transcription.routes');
+const liveInterviewRoutes = require('./routes/liveInterview.routes');
 
 app.use('/api/job-analysis', jobAnalysisRoutes);
 app.use('/api/mcqs', mcqRoutes);
@@ -52,6 +53,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/study', studyRoutes);
 app.use('/api/transcribe', transcriptionRoutes);
+app.use('/api/live-interview', liveInterviewRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
