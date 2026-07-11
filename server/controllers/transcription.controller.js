@@ -44,3 +44,48 @@ exports.transcribeAudio = asyncHandler(async (req, res, next) => {
     return next(new ApiError(502, 'Failed to transcribe audio'));
   }
 });
+
+// @desc    Generate speech using Deepgram TTS
+// @route   POST /api/transcribe/tts
+// @access  Private
+exports.generateSpeech = asyncHandler(async (req, res, next) => {
+  const { text } = req.body;
+  if (!text) {
+    return next(new ApiError(400, 'No text provided'));
+  }
+
+  const apiKey = process.env.DEEPGRAM_API_KEY;
+  if (!apiKey) {
+    return next(new ApiError(500, 'TTS service not configured'));
+  }
+
+  try {
+    // We use aura-luna-en as it's a friendly female voice. Deepgram doesn't have an Indian accent female voice yet.
+    const response = await fetch(
+      'https://api.deepgram.com/v1/speak?model=aura-luna-en',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Token ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      }
+    );
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Deepgram TTS error:', response.status, errText);
+      return next(new ApiError(502, 'TTS service returned an error'));
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    
+    res.set('Content-Type', 'audio/mpeg');
+    res.send(buffer);
+  } catch (err) {
+    console.error('Deepgram TTS failed:', err.message);
+    return next(new ApiError(502, 'Failed to generate speech'));
+  }
+});

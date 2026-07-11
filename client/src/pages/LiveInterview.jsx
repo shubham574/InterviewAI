@@ -23,60 +23,69 @@ import { API } from '../api/endpoints';
 import { MOCK_QUESTION_COUNTS } from '../utils/constants';
 import { getGradeColor } from '../utils/helpers';
 
-// ─── Web Speech API TTS Hook ──────────────────────────────────────────────────
-const useShristi = () => {
+// ─── Deepgram TTS Hook ────────────────────────────────────────────────────────
+const useShristi = ({ getToken }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const utteranceRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const sourceNodeRef = useRef(null);
 
-  const speak = useCallback((text, onEnd) => {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
+  const stopSpeaking = useCallback(() => {
+    if (sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current.stop();
+        sourceNodeRef.current.disconnect();
+      } catch (e) {}
+      sourceNodeRef.current = null;
+    }
+    setIsSpeaking(false);
+  }, []);
 
+  const speak = useCallback(async (text, onEnd) => {
     if (isMuted) {
       onEnd?.();
       return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utteranceRef.current = utterance;
+    stopSpeaking();
 
-    // Pick a friendly female voice
-    const voices = window.speechSynthesis.getVoices();
-    const femaleVoice =
-      voices.find((v) => v.name.toLowerCase().includes('female')) ||
-      voices.find((v) => /samantha|karen|victoria|zira|hazel|nicky|susan/i.test(v.name)) ||
-      voices.find((v) => v.lang === 'en-IN' && v.name.toLowerCase().includes('female')) ||
-      voices.find((v) => v.lang.startsWith('en')) ||
-      voices[0];
+    try {
+      const token = await getToken();
+      const { data } = await api.post(API.TTS, { text }, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'arraybuffer'
+      });
 
-    if (femaleVoice) utterance.voice = femaleVoice;
-    utterance.rate = 0.95;
-    utterance.pitch = 1.05;
-    utterance.volume = 1;
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      const audioBuffer = await audioContextRef.current.decodeAudioData(data);
+      const source = audioContextRef.current.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContextRef.current.destination);
+      
+      setIsSpeaking(true);
+      sourceNodeRef.current = source;
+      
+      source.onended = () => {
+        setIsSpeaking(false);
+        onEnd?.();
+      };
+      
+      source.start(0);
+    } catch (err) {
+      console.error("TTS Failed:", err);
+      toast.error("Failed to generate Shristi's voice.");
       setIsSpeaking(false);
-      onEnd?.();
-    };
-    utterance.onerror = () => {
-      setIsSpeaking(false);
-      onEnd?.();
-    };
-
-    window.speechSynthesis.speak(utterance);
-  }, [isMuted]);
-
-  const stopSpeaking = useCallback(() => {
-    window.speechSynthesis?.cancel();
-    setIsSpeaking(false);
-  }, []);
+      onEnd?.(); // fail gracefully
+    }
+  }, [isMuted, getToken, stopSpeaking]);
 
   const toggleMute = useCallback(() => {
-    if (!isMuted) window.speechSynthesis?.cancel();
+    if (!isMuted) stopSpeaking();
     setIsMuted((m) => !m);
-  }, [isMuted]);
+  }, [isMuted, stopSpeaking]);
 
   return { speak, stopSpeaking, isSpeaking, isMuted, toggleMute };
 };
@@ -286,7 +295,7 @@ const LiveInterview = () => {
   }, [chatHistory, isThinking, screen]);
 
   // ── Shristi TTS
-  const { speak, stopSpeaking, isSpeaking, isMuted, toggleMute } = useShristi();
+  const { speak, stopSpeaking, isSpeaking, isMuted, toggleMute } = useShristi({ getToken });
 
   // ── Handle Auto-Submit
   const handleSubmitAnswer = async (answerText) => {

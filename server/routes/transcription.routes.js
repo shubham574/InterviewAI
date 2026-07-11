@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const { transcribeAudio } = require('../controllers/transcription.controller');
+const { transcribeAudio, generateSpeech } = require('../controllers/transcription.controller');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -20,5 +20,6 @@ const upload = multer({
 });
 
 router.post('/', protect, upload.single('audio'), transcribeAudio);
+router.post('/tts', protect, generateSpeech);
 
 module.exports = router;

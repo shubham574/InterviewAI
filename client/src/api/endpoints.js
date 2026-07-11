@@ -46,6 +46,7 @@ export const API = {
     GENERATE: '/study/generate'
   },
   TRANSCRIBE: '/transcribe',
+  TTS: '/transcribe/tts',
   LIVE_INTERVIEW: {
     START: '/live-interview/start',
     TURN: (id) => `/live-interview/${id}/turn`,
