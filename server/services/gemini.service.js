@@ -14,10 +14,11 @@ const generateContent = async (prompt, customApiKey = null, retries = 3) => {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-flash-latest',
+        model: 'gemini-1.5-flash',
         contents: prompt,
         config: {
           responseMimeType: "application/json",
+          maxOutputTokens: 8192,
         }
       });
 
