@@ -2,6 +2,13 @@ const LiveInterview = require('../models/LiveInterview');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const { generateLiveQuestions, evaluateLiveAnswer } = require('../services/liveInterview.service');
+const { LIVE_INTERVIEW_GEMINI_API_KEY } = require('../config/env');
+
+// Resolve which Gemini key to use:
+// 1. User's own key (from UI) — highest priority
+// 2. Dedicated Live Interview key (from server env)
+const resolveApiKey = (req) =>
+  req.headers['x-gemini-api-key'] || LIVE_INTERVIEW_GEMINI_API_KEY || null;
 
 // @desc    Start a new live interview session
 // @route   POST /api/live-interview/start
@@ -13,7 +20,7 @@ exports.startInterview = asyncHandler(async (req, res, next) => {
     return next(new ApiError(400, 'Please provide userName, jobRole, and jobDescription'));
   }
 
-  const customApiKey = req.headers['x-gemini-api-key'];
+  const customApiKey = resolveApiKey(req);
 
   // Generate questions tailored to the JD
   const aiResult = await generateLiveQuestions(
@@ -64,7 +71,7 @@ exports.submitTurn = asyncHandler(async (req, res, next) => {
   const question = session.questions[questionIndex];
   if (!question) return next(new ApiError(400, 'Invalid question index'));
 
-  const customApiKey = req.headers['x-gemini-api-key'];
+  const customApiKey = resolveApiKey(req);
 
   // Get Shristi's evaluation
   const evaluation = await evaluateLiveAnswer(
