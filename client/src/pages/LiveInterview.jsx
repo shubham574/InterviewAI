@@ -314,27 +314,24 @@ const LiveInterview = () => {
 
       const result = data.data;
       setIsThinking(false);
-      setShristiMessage(result.shristiResponse);
 
       if (result.action === 'retry') {
         // Re-ask same question
         setPreviousAnswer(answerText);
         setAttempt((a) => a + 1);
+        setShristiMessage(result.shristiResponse);
       } else {
         // Move to next question (action = "next" or "followup")
         const nextIndex = currentQIndex + 1;
         if (nextIndex < session.totalQuestions) {
-          // Wait for Shristi to finish speaking, then advance
-          const delay = isMuted ? 800 : Math.max(result.shristiResponse.length * 50, 1500);
-          setTimeout(() => {
-            const nextQ = session.questions[nextIndex];
-            setCurrentQIndex(nextIndex);
-            setAttempt(1);
-            setPreviousAnswer(null);
-            setShristiMessage(result.shristiResponse + ' ' + nextQ.question);
-          }, delay);
+          const nextQ = session.questions[nextIndex];
+          setCurrentQIndex(nextIndex);
+          setAttempt(1);
+          setPreviousAnswer(null);
+          setShristiMessage(result.shristiResponse + ' ' + nextQ.question);
         } else {
           // All questions done — complete interview
+          setShristiMessage(result.shristiResponse);
           const completeDelay = isMuted ? 800 : Math.max(result.shristiResponse.length * 50, 1500);
           setTimeout(async () => {
             await handleComplete(result.shristiResponse);
@@ -589,7 +586,7 @@ const LiveInterview = () => {
   const renderAppContainer = (content) => (
     <div 
       ref={containerRef} 
-      className={`bg-background transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 h-screen w-screen overflow-hidden flex flex-col p-4 sm:p-6' : 'min-h-[calc(100vh-8rem)]'}`}
+      className={`bg-background transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 h-screen w-screen overflow-hidden flex flex-col p-4 sm:p-6' : 'h-[calc(100vh-5rem)] overflow-hidden flex flex-col p-4 sm:p-6'}`}
     >
        <SEOHead title={`Live Interview — ${jobRole}`} />
        {content}

@@ -106,7 +106,7 @@ Job Description:
 ${jobDescription}
 
 Generate exactly ${count} interview questions that are specifically tailored to this job description and role.
-Include a mix of: technical questions (based on JD skills), behavioral questions, and situational questions.
+Focus strictly on deep technical questions to evaluate the candidate's core technical competencies, coding knowledge, system design, or domain expertise related to the job description. Do NOT include behavioral, soft skills, or generic scenario-based questions.
 
 Return the output EXACTLY in the following JSON format without any markdown wrappers or extra text:
 {
