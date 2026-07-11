@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   FiMic, FiStopCircle, FiArrowRight, FiAlertCircle,
   FiLoader, FiCheckCircle, FiUser, FiFileText, FiBriefcase,
-  FiVolume2, FiVolumeX, FiStar, FiTrendingUp,
+  FiVolume2, FiVolumeX, FiStar, FiTrendingUp, FiMaximize, FiMinimize, FiX
 } from 'react-icons/fi';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
 import LottieComponent from 'lottie-react';
 const Lottie = LottieComponent.default || LottieComponent;
@@ -41,12 +41,12 @@ const useShristi = () => {
     const utterance = new SpeechSynthesisUtterance(text);
     utteranceRef.current = utterance;
 
-    // Pick a female voice if available
+    // Pick a friendly female voice
     const voices = window.speechSynthesis.getVoices();
     const femaleVoice =
       voices.find((v) => v.name.toLowerCase().includes('female')) ||
       voices.find((v) => /samantha|karen|victoria|zira|hazel|nicky|susan/i.test(v.name)) ||
-      voices.find((v) => v.lang === 'en-IN') ||
+      voices.find((v) => v.lang === 'en-IN' && v.name.toLowerCase().includes('female')) ||
       voices.find((v) => v.lang.startsWith('en')) ||
       voices[0];
 
@@ -82,7 +82,7 @@ const useShristi = () => {
 };
 
 // ─── Deepgram Voice Recorder ──────────────────────────────────────────────────
-const useDeepgramRecorder = ({ onTranscript, getToken }) => {
+const useDeepgramRecorder = ({ onTranscriptComplete, getToken }) => {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
@@ -116,10 +116,10 @@ const useDeepgramRecorder = ({ onTranscript, getToken }) => {
           const { data } = await api.post(API.TRANSCRIBE, formData, {
             headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
           });
-          if (data.transcript) onTranscript(data.transcript);
+          if (data.transcript) onTranscriptComplete(data.transcript);
           else toast('No speech detected. Please try again.', { icon: '🎙️' });
         } catch (err) {
-          toast.error(err.response?.data?.error || 'Transcription failed. Please type your answer.');
+          toast.error(err.response?.data?.error || 'Transcription failed. Please try again.');
         } finally { setIsTranscribing(false); }
       };
       recorder.start();
@@ -128,7 +128,7 @@ const useDeepgramRecorder = ({ onTranscript, getToken }) => {
       if (err.name === 'NotAllowedError') setError('Microphone access denied.');
       else setError(`Could not start recording: ${err.message}`);
     }
-  }, [getToken, onTranscript]);
+  }, [getToken, onTranscriptComplete]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
@@ -148,7 +148,6 @@ const useDeepgramRecorder = ({ onTranscript, getToken }) => {
 const ShristiAvatar = ({ isSpeaking, isThinking }) => (
   <div className="flex flex-col items-center gap-3">
     <div className="relative">
-      {/* Outer pulse ring */}
       <AnimatePresence>
         {(isSpeaking || isThinking) && (
           <motion.div
@@ -159,16 +158,14 @@ const ShristiAvatar = ({ isSpeaking, isThinking }) => (
           />
         )}
       </AnimatePresence>
-      {/* Avatar circle */}
       <motion.div
-        className="w-24 h-24 rounded-full flex items-center justify-center text-4xl shadow-lg relative z-10"
+        className="w-24 h-24 rounded-full flex items-center justify-center text-4xl shadow-lg relative z-10 border-4 border-white"
         style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' }}
         animate={isSpeaking ? { scale: [1, 1.04, 1] } : {}}
         transition={{ duration: 0.6, repeat: isSpeaking ? Infinity : 0 }}
       >
         👩‍💼
       </motion.div>
-      {/* Speaking indicator dots */}
       {isSpeaking && (
         <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-1 bg-white rounded-full px-2 py-1 shadow-md border border-gray-100">
           {[0, 0.15, 0.3].map((delay, i) => (
@@ -194,37 +191,35 @@ const ShristiAvatar = ({ isSpeaking, isThinking }) => (
   </div>
 );
 
-// ─── Speech Bubble ─────────────────────────────────────────────────────────────
-const SpeechBubble = ({ text, isThinking }) => (
-  <AnimatePresence mode="wait">
-    <motion.div
-      key={text}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.3 }}
-      className="relative bg-white border border-gray-100 rounded-2xl rounded-tl-none p-4 shadow-md"
-    >
-      {isThinking ? (
-        <div className="flex items-center gap-2 text-text-muted">
-          <FiLoader className="animate-spin" />
-          <span className="text-sm italic">Shristi is thinking...</span>
+// ─── User Avatar ───────────────────────────────────────────────────────────────
+const UserAvatar = ({ isSpeaking, imageUrl, name }) => (
+  <div className="flex flex-col items-center gap-3">
+    <div className="relative">
+      <AnimatePresence>
+        {isSpeaking && (
+          <motion.div
+            className="absolute inset-0 rounded-full"
+            style={{ background: 'rgba(16, 185, 129, 0.15)' }}
+            animate={{ scale: [1, 1.25, 1], opacity: [0.6, 0.2, 0.6] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          />
+        )}
+      </AnimatePresence>
+      <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg relative z-10 bg-surface-hover flex items-center justify-center">
+         {imageUrl ? <img src={imageUrl} alt={name} className="w-full h-full object-cover" /> : <FiUser className="w-10 h-10 text-text-muted" />}
+      </div>
+      {isSpeaking && (
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-1 bg-white rounded-full px-2 py-1 shadow-md border border-gray-100">
+          <FiMic className="text-success w-3 h-3 animate-pulse" />
         </div>
-      ) : (
-        <p className="text-text-primary text-sm leading-relaxed">{text}</p>
       )}
-    </motion.div>
-  </AnimatePresence>
-);
-
-// ─── Attempt Badge ─────────────────────────────────────────────────────────────
-const AttemptBadge = ({ attempt }) =>
-  attempt > 1 ? (
-    <div className="inline-flex items-center gap-1.5 text-xs font-medium text-warning bg-warning/10 border border-warning/20 px-2.5 py-1 rounded-full">
-      <span className="w-1.5 h-1.5 rounded-full bg-warning" />
-      Retry — Attempt {attempt}
     </div>
-  ) : null;
+    <div className="text-center">
+      <p className="font-bold text-text-primary text-sm">{name || 'You'}</p>
+      <p className="text-xs text-text-muted">Candidate</p>
+    </div>
+  </div>
+);
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 const SCREEN = { SETUP: 'setup', LOADING: 'loading', INTERVIEW: 'interview', RESULTS: 'results' };
@@ -232,12 +227,16 @@ const SCREEN = { SETUP: 'setup', LOADING: 'loading', INTERVIEW: 'interview', RES
 const LiveInterview = () => {
   const navigate = useNavigate();
   const { getToken } = useAuth();
+  const { user } = useUser();
+  const containerRef = useRef(null);
+  const chatEndRef = useRef(null);
 
   // ── Setup form state
   const [userName, setUserName] = useState('');
   const [jobRole, setJobRole] = useState('');
   const [jobDescription, setJobDescription] = useState('');
   const [totalQuestions, setTotalQuestions] = useState('5');
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // ── Session state
   const [screen, setScreen] = useState(SCREEN.SETUP);
@@ -245,29 +244,133 @@ const LiveInterview = () => {
   const [currentQIndex, setCurrentQIndex] = useState(0);
   const [attempt, setAttempt] = useState(1);
   const [previousAnswer, setPreviousAnswer] = useState(null);
-  const [currentAnswer, setCurrentAnswer] = useState('');
+  
+  // ── Chat State
+  const [chatHistory, setChatHistory] = useState([]);
   const [shristiMessage, setShristiMessage] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [finalSession, setFinalSession] = useState(null);
   const [shristiHasSpoken, setShristiHasSpoken] = useState(false);
 
+  // ── Fullscreen Listeners
+  const handleFullscreenChange = useCallback(() => {
+    setIsFullscreen(!!document.fullscreenElement);
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, [handleFullscreenChange]);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(err => toast.error(`Error enabling fullscreen: ${err.message}`));
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  const exitInterview = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    }
+    navigate('/dashboard');
+  };
+
+  // ── Scroll to bottom of chat
+  useEffect(() => {
+    if (screen === SCREEN.INTERVIEW) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatHistory, isThinking, screen]);
+
   // ── Shristi TTS
   const { speak, stopSpeaking, isSpeaking, isMuted, toggleMute } = useShristi();
 
-  // ── Voice recording — append transcript to textarea
-  const handleTranscript = useCallback((t) => {
-    setCurrentAnswer((prev) => (prev ? `${prev.trimEnd()} ${t}` : t));
-  }, []);
+  // ── Handle Auto-Submit
+  const handleSubmitAnswer = async (answerText) => {
+    if (!answerText || answerText.trim().length < 2) {
+       toast.error("Answer too short. Please try again.");
+       return;
+    }
+    
+    stopSpeaking();
+    setIsSubmitting(true);
+    setIsThinking(true);
+    setShristiHasSpoken(false);
+
+    try {
+      const token = await getToken();
+      const geminiKey = localStorage.getItem('custom_gemini_key');
+      const headers = { Authorization: `Bearer ${token}` };
+      if (geminiKey) headers['x-gemini-api-key'] = geminiKey;
+
+      const { data } = await api.post(
+        API.LIVE_INTERVIEW.TURN(session._id),
+        { questionIndex: currentQIndex, userAnswer: answerText, attempt, previousAnswer },
+        { headers }
+      );
+
+      const result = data.data;
+      setIsThinking(false);
+      setShristiMessage(result.shristiResponse);
+
+      if (result.action === 'retry') {
+        // Re-ask same question
+        setPreviousAnswer(answerText);
+        setAttempt((a) => a + 1);
+      } else {
+        // Move to next question (action = "next" or "followup")
+        const nextIndex = currentQIndex + 1;
+        if (nextIndex < session.totalQuestions) {
+          // Wait for Shristi to finish speaking, then advance
+          const delay = isMuted ? 800 : Math.max(result.shristiResponse.length * 50, 1500);
+          setTimeout(() => {
+            const nextQ = session.questions[nextIndex];
+            setCurrentQIndex(nextIndex);
+            setAttempt(1);
+            setPreviousAnswer(null);
+            setShristiMessage(result.shristiResponse + ' ' + nextQ.question);
+          }, delay);
+        } else {
+          // All questions done — complete interview
+          const completeDelay = isMuted ? 800 : Math.max(result.shristiResponse.length * 50, 1500);
+          setTimeout(async () => {
+            await handleComplete(result.shristiResponse);
+          }, completeDelay);
+        }
+      }
+    } catch (err) {
+      setIsThinking(false);
+      toast.error(err.response?.data?.error || 'Failed to evaluate answer. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // ── Voice recording
+  const handleTranscriptComplete = useCallback(async (t) => {
+    setChatHistory(prev => [...prev, { id: Date.now().toString(), sender: 'user', text: t }]);
+    await handleSubmitAnswer(t);
+  }, [currentQIndex, attempt, previousAnswer, session]);
+
   const { isRecording, isTranscribing, error: recorderError, toggleRecording } = useDeepgramRecorder({
-    onTranscript: handleTranscript,
+    onTranscriptComplete: handleTranscriptComplete,
     getToken,
   });
 
-  // ── Speak Shristi's message whenever it changes
+  // ── Speak Shristi's message whenever it changes and append to chat
   useEffect(() => {
     if (shristiMessage && screen === SCREEN.INTERVIEW) {
-      speak(shristiMessage, () => setShristiHasSpoken(true));
+      setChatHistory(prev => [...prev, { id: Date.now().toString(), sender: 'shristi', text: shristiMessage }]);
+      speak(shristiMessage, () => {
+         setShristiHasSpoken(true);
+         // Automatically start listening when Shristi finishes
+         if (!isMuted) {
+           toggleRecording();
+         }
+      });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shristiMessage]);
@@ -285,6 +388,21 @@ const LiveInterview = () => {
   const handleStart = async (e) => {
     e.preventDefault();
     if (!userName || !jobRole || !jobDescription) return;
+    
+    // Request Microhpone permission first
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+    } catch (err) {
+      toast.error("Microphone permission is required to start the live interview.");
+      return;
+    }
+
+    // Go Fullscreen
+    if (containerRef.current && !document.fullscreenElement) {
+       containerRef.current.requestFullscreen().catch(() => {});
+    }
+
     setScreen(SCREEN.LOADING);
     try {
       const token = await getToken();
@@ -304,67 +422,6 @@ const LiveInterview = () => {
     }
   };
 
-  // ─── Submit answer turn
-  const handleSubmitAnswer = async () => {
-    if (!currentAnswer.trim() || currentAnswer.trim().length < 5) return;
-    if (isRecording) toggleRecording();
-    stopSpeaking();
-
-    setIsSubmitting(true);
-    setIsThinking(true);
-    setShristiHasSpoken(false);
-
-    try {
-      const token = await getToken();
-      const geminiKey = localStorage.getItem('custom_gemini_key');
-      const headers = { Authorization: `Bearer ${token}` };
-      if (geminiKey) headers['x-gemini-api-key'] = geminiKey;
-
-      const { data } = await api.post(
-        API.LIVE_INTERVIEW.TURN(session._id),
-        { questionIndex: currentQIndex, userAnswer: currentAnswer, attempt, previousAnswer },
-        { headers }
-      );
-
-      const result = data.data;
-      setIsThinking(false);
-      setShristiMessage(result.shristiResponse);
-
-      if (result.action === 'retry') {
-        // Re-ask same question
-        setPreviousAnswer(currentAnswer);
-        setAttempt((a) => a + 1);
-        setCurrentAnswer('');
-      } else {
-        // Move to next question (action = "next" or "followup")
-        const nextIndex = currentQIndex + 1;
-        if (nextIndex < session.totalQuestions) {
-          // Wait for Shristi to finish speaking, then advance
-          const delay = isMuted ? 800 : Math.max(result.shristiResponse.length * 50, 1500);
-          setTimeout(() => {
-            const nextQ = session.questions[nextIndex];
-            setCurrentQIndex(nextIndex);
-            setAttempt(1);
-            setPreviousAnswer(null);
-            setCurrentAnswer('');
-            setShristiMessage(result.shristiResponse + ' ' + nextQ.question);
-          }, delay);
-        } else {
-          // All questions done — complete interview
-          const completeDelay = isMuted ? 800 : Math.max(result.shristiResponse.length * 50, 1500);
-          setTimeout(async () => {
-            await handleComplete(result.shristiResponse);
-          }, completeDelay);
-        }
-      }
-    } catch (err) {
-      setIsThinking(false);
-      toast.error(err.response?.data?.error || 'Failed to evaluate answer. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   // ─── Complete interview
   const handleComplete = async (lastMessage = '') => {
     try {
@@ -377,7 +434,10 @@ const LiveInterview = () => {
       setFinalSession(data.data);
       stopSpeaking();
       const finalMsg = `Thank you ${userName}! That concludes our interview. You did a great job. Your results are now ready.`;
-      speak(finalMsg, () => setScreen(SCREEN.RESULTS));
+      speak(finalMsg, () => {
+         if (document.fullscreenElement) document.exitFullscreen();
+         setScreen(SCREEN.RESULTS);
+      });
       setShristiMessage(finalMsg);
     } catch (err) {
       toast.error('Failed to complete interview. Please try again.');
@@ -525,11 +585,21 @@ const LiveInterview = () => {
     );
   }
 
+  // ─── Render: MAIN APP CONTAINER (used for LOADING and INTERVIEW) ───────────────
+  const renderAppContainer = (content) => (
+    <div 
+      ref={containerRef} 
+      className={`bg-background transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 h-screen w-screen overflow-hidden flex flex-col p-4 sm:p-6' : 'min-h-[calc(100vh-8rem)]'}`}
+    >
+       <SEOHead title={`Live Interview — ${jobRole}`} />
+       {content}
+    </div>
+  );
+
   // ─── Render: LOADING ─────────────────────────────────────────────────────────
   if (screen === SCREEN.LOADING) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
-        <SEOHead title="Setting up Live Interview..." />
+    return renderAppContainer(
+      <div className="flex flex-col items-center justify-center h-full min-h-[500px]">
         <div className="w-64 h-64 mb-4">
           <Lottie animationData={interviewLoader} loop={true} />
         </div>
@@ -543,17 +613,12 @@ const LiveInterview = () => {
 
   // ─── Render: INTERVIEW ────────────────────────────────────────────────────────
   if (screen === SCREEN.INTERVIEW && session) {
-    const currentQ = session.questions[currentQIndex];
-    const canSubmit = currentAnswer.trim().length >= 5 && !isSubmitting && !isTranscribing && !isSpeaking;
-    const isLastQuestion = currentQIndex === session.totalQuestions - 1;
     const progress = Math.round((currentQIndex / session.totalQuestions) * 100);
 
-    return (
-      <div className="max-w-5xl mx-auto min-h-[calc(100vh-8rem)] flex flex-col">
-        <SEOHead title={`Live Interview — ${session.jobRole}`} />
-
+    return renderAppContainer(
+      <div className="flex flex-col h-full w-full max-w-6xl mx-auto">
         {/* Top bar */}
-        <div className="mb-4">
+        <div className="mb-4 flex-shrink-0">
           <div className="flex justify-between items-center mb-2">
             <div>
               <h2 className="text-lg font-bold text-text-primary">{session.jobRole} Interview</h2>
@@ -562,15 +627,25 @@ const LiveInterview = () => {
             <div className="flex items-center gap-3">
               <button
                 onClick={toggleMute}
-                className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-primary transition-colors bg-surface-hover border border-border rounded-lg px-2.5 py-1.5"
+                className="flex items-center justify-center text-text-muted hover:text-text-primary transition-colors bg-surface-hover border border-border rounded-lg p-2"
                 title={isMuted ? 'Unmute Shristi' : 'Mute Shristi'}
               >
                 {isMuted ? <FiVolumeX className="w-4 h-4" /> : <FiVolume2 className="w-4 h-4" />}
-                {isMuted ? 'Unmuted' : 'Muted'}
               </button>
-              <span className="text-sm font-medium text-text-secondary">
-                Q{currentQIndex + 1} / {session.totalQuestions}
-              </span>
+              <button
+                onClick={toggleFullscreen}
+                className="flex items-center justify-center text-text-muted hover:text-text-primary transition-colors bg-surface-hover border border-border rounded-lg p-2 hidden sm:flex"
+                title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              >
+                {isFullscreen ? <FiMinimize className="w-4 h-4" /> : <FiMaximize className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={exitInterview}
+                className="flex items-center justify-center text-error hover:bg-error/10 transition-colors bg-surface-hover border border-border rounded-lg p-2 ml-2"
+                title="Exit Interview"
+              >
+                <FiX className="w-4 h-4" />
+              </button>
             </div>
           </div>
           <div className="w-full bg-surface-hover rounded-full h-2">
@@ -583,110 +658,80 @@ const LiveInterview = () => {
         </div>
 
         {/* Main interview area */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-6">
-
-          {/* Shristi panel */}
-          <div className="lg:col-span-2 flex flex-col">
-            <Card className="flex-1 p-6 flex flex-col gap-4 bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-100">
-              <ShristiAvatar isSpeaking={isSpeaking} isThinking={isThinking} />
-              <SpeechBubble text={shristiMessage} isThinking={isThinking && !shristiMessage} />
-
-              {/* Current question card */}
-              {currentQ && !isThinking && (
-                <div className="mt-auto">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="secondary">{currentQ.category}</Badge>
-                    <Badge variant={currentQ.difficulty === 'Hard' ? 'error' : currentQ.difficulty === 'Medium' ? 'warning' : 'success'}>
-                      {currentQ.difficulty}
-                    </Badge>
-                    <AttemptBadge attempt={attempt} />
-                  </div>
-                  <p className="text-text-primary font-medium text-sm leading-relaxed">
-                    {currentQ.question}
-                  </p>
-                </div>
-              )}
-            </Card>
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 min-h-0">
+          
+          {/* Left - Avatars */}
+          <div className="md:col-span-1 flex flex-row md:flex-col gap-4">
+             <Card className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-100">
+               <ShristiAvatar isSpeaking={isSpeaking} isThinking={isThinking} />
+             </Card>
+             <Card className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-100">
+               <UserAvatar isSpeaking={isRecording} imageUrl={user?.imageUrl} name={userName} />
+             </Card>
           </div>
 
-          {/* Answer panel */}
-          <div className="lg:col-span-3 flex flex-col">
-            <Card className="flex-1 p-6 flex flex-col gap-4">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="font-bold text-text-primary">Your Answer</h3>
+          {/* Right - Chat & Controls */}
+          <Card className="md:col-span-2 flex flex-col p-0 overflow-hidden bg-gray-50/50">
+             
+             {/* WhatsApp Style Chat Area */}
+             <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {chatHistory.map(msg => (
+                   <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[85%] p-3.5 rounded-2xl ${msg.sender === 'user' ? 'bg-primary text-white rounded-tr-none' : 'bg-white border border-gray-200 text-gray-800 rounded-tl-none shadow-sm'}`}>
+                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                      </div>
+                   </div>
+                ))}
+                
+                {isThinking && (
+                   <div className="flex justify-start">
+                      <div className="bg-white border border-gray-200 p-3.5 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-2">
+                         <FiLoader className="animate-spin text-primary" />
+                         <span className="text-sm text-gray-500 italic">Shristi is thinking...</span>
+                      </div>
+                   </div>
+                )}
+                
                 {isTranscribing && (
-                  <span className="text-xs text-warning flex items-center gap-1">
-                    <FiLoader className="animate-spin" /> Transcribing...
-                  </span>
+                   <div className="flex justify-end">
+                      <div className="bg-primary/80 text-white p-3.5 rounded-2xl rounded-tr-none flex items-center gap-2 shadow-sm">
+                         <FiLoader className="animate-spin" />
+                         <span className="text-sm italic">Transcribing...</span>
+                      </div>
+                   </div>
                 )}
-              </div>
+                <div ref={chatEndRef} />
+             </div>
 
-              <div className="flex-1 relative">
-                <textarea
-                  rows={8}
-                  placeholder={
-                    isRecording
-                      ? '🎙️ Recording... speak clearly, then click Stop.'
-                      : isTranscribing
-                      ? '⏳ Transcribing your speech...'
-                      : isSpeaking
-                      ? '🔊 Wait for Shristi to finish...'
-                      : 'Type your answer here, or use the microphone...'
-                  }
-                  value={currentAnswer}
-                  onChange={(e) => setCurrentAnswer(e.target.value)}
-                  disabled={isTranscribing || isSubmitting}
-                  className={`w-full h-full min-h-[200px] px-4 py-3 rounded-xl border-2 bg-surface text-text-primary placeholder-text-muted resize-none transition-all duration-200 outline-none text-base leading-relaxed ${
-                    isRecording
-                      ? 'border-error ring-2 ring-error/20'
-                      : isTranscribing
-                      ? 'border-warning ring-2 ring-warning/20 opacity-70'
-                      : 'border-border focus:border-primary focus:ring-2 focus:ring-primary/20'
-                  }`}
-                />
-                {isRecording && (
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-error/10 text-error px-2 py-1 rounded-lg text-xs font-medium animate-pulse pointer-events-none">
-                    <span className="w-2 h-2 rounded-full bg-error" />
-                    Recording
+             {/* Controls */}
+             <div className="p-4 bg-white border-t border-gray-100 flex-shrink-0 flex flex-col items-center justify-center gap-2">
+                {recorderError && (
+                  <div className="flex items-center gap-2 text-xs text-error bg-error/10 px-3 py-1.5 rounded-lg mb-2">
+                    <FiAlertCircle /> {recorderError}
                   </div>
                 )}
-              </div>
 
-              {recorderError && (
-                <div className="flex items-start gap-2 text-sm text-error bg-error/5 border border-error/20 p-3 rounded-lg">
-                  <FiAlertCircle className="mt-0.5 flex-shrink-0" />
-                  {recorderError}
-                </div>
-              )}
-
-              {isSubmitting && (
-                <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-xl border border-primary/20">
-                  <Loader size="sm" />
-                  <p className="text-text-primary text-sm font-medium">Shristi is evaluating your answer...</p>
-                </div>
-              )}
-
-              <div className="flex justify-between items-center pt-2">
-                <Button
-                  variant={isRecording ? 'danger' : 'secondary'}
-                  onClick={toggleRecording}
-                  icon={isRecording ? FiStopCircle : FiMic}
-                  disabled={isTranscribing || isSubmitting || isSpeaking}
-                >
-                  {isRecording ? 'Stop Recording' : 'Record Answer'}
-                </Button>
-
-                <Button
-                  variant="primary"
-                  onClick={handleSubmitAnswer}
-                  disabled={!canSubmit}
-                  icon={FiArrowRight}
-                >
-                  {isLastQuestion && attempt === 2 ? 'Finish Interview' : 'Submit Answer'}
-                </Button>
-              </div>
-            </Card>
-          </div>
+                {isRecording ? (
+                   <button 
+                     onClick={toggleRecording} 
+                     className="flex items-center gap-2 bg-error text-white px-8 py-3 rounded-full font-bold hover:bg-error/90 transition-all animate-pulse shadow-lg shadow-error/30"
+                   >
+                      <FiStopCircle className="w-5 h-5" /> Stop & Submit Answer
+                   </button>
+                ) : (
+                   <button 
+                     onClick={toggleRecording} 
+                     disabled={isSpeaking || isSubmitting || isTranscribing} 
+                     className="flex items-center gap-2 bg-primary text-white px-8 py-3 rounded-full font-bold hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-primary/20"
+                   >
+                      <FiMic className="w-5 h-5" /> {isSpeaking ? "Wait for Shristi..." : "Tap to Answer"}
+                   </button>
+                )}
+                <p className="text-xs text-gray-400 font-medium">
+                   {isRecording ? "Listening to your answer..." : "Answers are automatically transcribed and submitted."}
+                </p>
+             </div>
+          </Card>
         </div>
       </div>
     );
@@ -765,7 +810,7 @@ const LiveInterview = () => {
         {/* Shristi intro card */}
         <Card className="p-8 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 border-indigo-100">
           <div className="flex items-center gap-5 mb-6">
-            <div className="w-20 h-20 rounded-full flex items-center justify-center text-4xl shadow-lg"
+            <div className="w-20 h-20 rounded-full flex items-center justify-center text-4xl shadow-lg border-4 border-white"
               style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' }}>
               👩‍💼
             </div>
@@ -792,7 +837,7 @@ const LiveInterview = () => {
           <div className="space-y-4">
             {[
               { icon: FiFileText, step: '1', title: 'Paste your Job Description', desc: 'Shristi reads the JD and generates role-specific questions tailored to the exact skills required.' },
-              { icon: FiMic, step: '2', title: 'Answer by voice or typing', desc: 'Use the microphone for a realistic feel, or type your answer. Deepgram transcribes your speech accurately.' },
+              { icon: FiMic, step: '2', title: 'Answer by voice automatically', desc: 'Use the microphone for a realistic feel. Deepgram transcribes your speech accurately when you finish.' },
               { icon: FiBriefcase, step: '3', title: 'Shristi evaluates live', desc: 'She evaluates your answer, gives feedback, and either asks a follow-up or moves to the next question.' },
               { icon: FiStar, step: '4', title: 'Get a full performance report', desc: 'After the interview, see your score per question, strengths, areas to improve, and Shristi\'s final recommendation.' },
             ].map(({ icon: Icon, step, title, desc }) => (
