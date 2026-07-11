@@ -8,7 +8,8 @@ import {
 } from 'react-icons/fi';
 import { useAuth } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
-import Lottie from 'lottie-react';
+import LottieComponent from 'lottie-react';
+const Lottie = LottieComponent.default || LottieComponent;
 import interviewLoader from '../assets/interviewLoader.json';
 import SEOHead from '../components/common/SEOHead';
 import Card from '../components/ui/Card';

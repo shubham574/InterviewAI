@@ -5,7 +5,8 @@ import {
   FiVideo, FiMic, FiStopCircle, FiCheckCircle,
   FiPlay, FiArrowRight, FiAlertCircle, FiLoader,
 } from 'react-icons/fi';
-import Lottie from 'lottie-react';
+import LottieComponent from 'lottie-react';
+const Lottie = LottieComponent.default || LottieComponent;
 import interviewLoader from '../assets/interviewLoader.json';
 import { useApiMutation, useApiQuery } from '../hooks/useApi';
 import { API } from '../api/endpoints';
