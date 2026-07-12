@@ -43,12 +43,12 @@ const History = () => {
 
   const getColorForType = (type) => {
     switch (type) {
-      case 'analysis': return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
-      case 'mcq': return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
-      case 'assessment': return 'bg-primary/10 text-primary border-primary/20';
-      case 'interview': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-      case 'mock': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
-      default: return 'bg-white text-text-primary border-gray-200';
+      case 'analysis': return 'bg-[#ea580c15] text-[#ea580c] border-[#ea580c30]';
+      case 'mcq': return 'bg-[#a855f715] text-[#a855f7] border-[#a855f730]';
+      case 'assessment': return 'bg-accent-primary/15 text-accent-primary border-accent-primary/30';
+      case 'interview': return 'bg-[#3b82f615] text-[#3b82f6] border-[#3b82f630]';
+      case 'mock': return 'bg-success/15 text-success border-success/30';
+      default: return 'bg-bg-surface text-text-primary border-border-subtle';
     }
   };
 
@@ -81,10 +81,10 @@ const History = () => {
             <button
               key={type}
               onClick={() => setFilter(type)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border ${
                 filter === type 
-                  ? 'bg-primary text-white border-primary' 
-                  : 'bg-surface text-text-secondary border-border hover:bg-surface-hover'
+                  ? 'bg-accent-primary text-white border-accent-glow shadow-md shadow-accent-primary/20' 
+                  : 'bg-bg-surface text-text-secondary border-border-subtle hover:bg-bg-canvas hover:text-text-primary'
               }`}
             >
               {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -93,50 +93,50 @@ const History = () => {
         </div>
       </div>
 
-      <Card className="min-h-[500px]">
+      <Card className="min-h-[500px] p-0 overflow-hidden bg-bg-surface border-border-subtle">
         {isLoading ? (
           <div className="h-64 flex justify-center items-center"><Loader /></div>
         ) : historyItems.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-border">
-                  <th className="pb-3 px-4 font-medium text-text-secondary text-sm w-16">Type</th>
-                  <th className="pb-3 px-4 font-medium text-text-secondary text-sm">Role / Topic</th>
-                  <th className="pb-3 px-4 font-medium text-text-secondary text-sm w-32">Date</th>
-                  <th className="pb-3 px-4 font-medium text-text-secondary text-sm w-24">Details</th>
-                  <th className="pb-3 px-4 font-medium text-text-secondary text-sm w-16 text-right">Action</th>
+                <tr className="border-b border-border-subtle bg-bg-canvas/50">
+                  <th className="py-4 px-6 font-semibold text-text-secondary text-sm w-16 uppercase tracking-wider">Type</th>
+                  <th className="py-4 px-6 font-semibold text-text-secondary text-sm uppercase tracking-wider">Role / Topic</th>
+                  <th className="py-4 px-6 font-semibold text-text-secondary text-sm w-32 uppercase tracking-wider">Date</th>
+                  <th className="py-4 px-6 font-semibold text-text-secondary text-sm w-32 uppercase tracking-wider">Details</th>
+                  <th className="py-4 px-6 font-semibold text-text-secondary text-sm w-16 text-right uppercase tracking-wider">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-border-subtle">
                 {historyItems.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-surface-hover transition-colors group">
-                    <td className="py-4 px-4">
+                  <tr key={idx} className="hover:bg-bg-canvas transition-colors group">
+                    <td className="py-4 px-6">
                       <div 
-                        className={`w-10 h-10 rounded-lg flex items-center justify-center border ${getColorForType(item.historyType)}`}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center border ${getColorForType(item.historyType)}`}
                         title={getLabelForType(item.historyType)}
                       >
                         {getIconForType(item.historyType)}
                       </div>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-4 px-6">
                       <div className="font-medium text-text-primary">{item.jobRole || 'General'}</div>
-                      <div className="text-xs text-text-muted mt-1">{getLabelForType(item.historyType)}</div>
+                      <div className="text-xs text-text-secondary mt-1">{getLabelForType(item.historyType)}</div>
                     </td>
-                    <td className="py-4 px-4 text-sm text-text-secondary">
+                    <td className="py-4 px-6 text-sm text-text-secondary">
                       {formatDate(item.createdAt)}
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-4 px-6">
                       {item.historyType === 'assessment' && <Badge variant={item.score >= 70 ? 'success' : 'warning'}>{item.score}%</Badge>}
                       {item.historyType === 'mock' && item.status === 'completed' && <Badge variant="success">{item.overallFeedback?.averageScore || 0}%</Badge>}
                       {item.historyType === 'mock' && item.status !== 'completed' && <Badge variant="warning">Draft</Badge>}
-                      {item.historyType === 'mcq' && <Badge variant="default">{item.count} Qs</Badge>}
+                      {item.historyType === 'mcq' && <Badge variant="info">{item.count} Qs</Badge>}
                       {item.historyType === 'analysis' && <Badge variant="primary">{item.experienceLevel}</Badge>}
                     </td>
-                    <td className="py-4 px-4 text-right">
+                    <td className="py-4 px-6 text-right">
                       <button 
                         onClick={() => handleDelete(item.historyType, item._id)}
-                        className="p-2 text-text-muted hover:text-error hover:bg-error/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        className="p-2 text-text-secondary hover:text-danger hover:bg-danger/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                         title="Delete"
                       >
                         <FiTrash2 />
@@ -148,7 +148,7 @@ const History = () => {
             </table>
           </div>
         ) : (
-          <div className="h-64 flex flex-col justify-center items-center text-text-muted">
+          <div className="h-64 flex flex-col justify-center items-center text-text-secondary">
             <FiList className="w-12 h-12 mb-4 opacity-20" />
             <p>No history found for the selected filter.</p>
           </div>

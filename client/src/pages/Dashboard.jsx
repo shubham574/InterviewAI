@@ -6,7 +6,7 @@ import {
   LineChart, Line, RadialBarChart, RadialBar, Legend
 } from 'recharts';
 import { 
-  FiFileText, FiList, FiVideo, FiTrendingUp, FiArrowRight, FiActivity
+  FiFileText, FiList, FiVideo, FiTrendingUp, FiArrowRight, FiActivity, FiClock
 } from 'react-icons/fi';
 import { useApiQuery } from '../hooks/useApi';
 import { API } from '../api/endpoints';
@@ -14,6 +14,7 @@ import SEOHead from '../components/common/SEOHead';
 import Card from '../components/ui/Card';
 import AnimatedCounter from '../components/ui/AnimatedCounter';
 import Loader from '../components/ui/Loader';
+import DashboardSkeleton from '../components/ui/DashboardSkeleton';
 import { getGradeColor, formatDate } from '../utils/helpers';
 import { useUser } from '@clerk/clerk-react';
 
@@ -22,7 +23,12 @@ const Dashboard = () => {
   const { data: response, isLoading } = useApiQuery('dashboardStats', API.DASHBOARD.STATS);
 
   if (isLoading) {
-    return <Loader fullScreen />;
+    return (
+      <div className="space-y-8 animate-in fade-in duration-300">
+        <SEOHead title="Dashboard | Loading..." />
+        <DashboardSkeleton />
+      </div>
+    );
   }
 
   const { stats, topicPerformance, progressOverTime, recentActivity } = response?.data || {};
@@ -40,224 +46,165 @@ const Dashboard = () => {
 
   const readinessData = [
     { name: 'Target', value: 100, fill: 'var(--color-surface-hover)' },
-    { name: 'Score', value: stats?.readinessScore || 0, fill: 'var(--color-primary)' }
+    { name: 'Score', value: stats?.readinessScore || 0, fill: 'var(--color-accent-primary)' }
   ];
 
   return (
-    <div className="space-y-6 p-6 md:p-8 border border-gray-200 bg-white/30 backdrop-blur-sm rounded-3xl shadow-sm">
+    <div className="space-y-8 animate-in fade-in duration-300">
       <SEOHead title="Dashboard" />
       
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-text-primary">Welcome back, {user?.firstName || 'User'} 👋</h1>
-          <p className="text-text-secondary mt-2 text-lg">Here's your interview preparation progress.</p>
+      {/* ─── Action Hero ─── */}
+      <div className="bg-bg-surface border border-border-subtle rounded-3xl p-8 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-accent-primary/10 via-transparent to-transparent pointer-events-none" />
+        
+        <div className="relative z-10 max-w-xl">
+          <h1 className="text-3xl sm:text-4xl font-bold font-display text-text-primary mb-3">
+            {hasData ? `Welcome back, ${user?.firstName || 'User'}` : `Ready to start, ${user?.firstName || 'User'}?`}
+          </h1>
+          <p className="text-lg text-text-secondary mb-8">
+            {hasData 
+              ? "Pick up where you left off and keep sharpening your interview skills." 
+              : "Set up your first mock interview and get real-time AI feedback."}
+          </p>
+          <div className="flex gap-4">
+            <Link to="/mock-interview" className="bg-accent-primary text-white px-6 py-3 rounded-xl font-semibold text-sm hover:opacity-90 transition-all shadow-md shadow-accent-primary/20 flex items-center">
+              <FiVideo className="mr-2" /> Start New Interview
+            </Link>
+            {hasData && (
+              <Link to="/history" className="bg-bg-elevated border border-border-subtle text-text-primary px-6 py-3 rounded-xl font-semibold text-sm hover:bg-surface-hover transition-colors flex items-center">
+                <FiList className="mr-2" /> View History
+              </Link>
+            )}
+          </div>
         </div>
-        <div className="flex gap-3">
-          <Link to="/job-analysis" className="bg-surface hover:bg-surface-hover border border-border px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-            New Job Analysis
-          </Link>
-          <Link to="/mock-interview" className="bg-gradient-primary hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-primary/20">
-            Start Mock Interview
-          </Link>
-        </div>
+        
+        {hasData && (
+          <div className="relative z-10 w-full md:w-auto shrink-0 bg-bg-canvas border border-border-subtle p-6 rounded-2xl flex flex-col items-center">
+            <h3 className="text-sm font-medium text-text-secondary mb-4">Interview Readiness</h3>
+            <div className="relative w-32 h-32 flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadialBarChart cx="50%" cy="50%" innerRadius="70%" outerRadius="100%" barSize={10} data={readinessData} startAngle={90} endAngle={-270}>
+                  <RadialBar minAngle={15} background={{ fill: 'var(--color-surface-hover)' }} clockWise dataKey="value" cornerRadius={10} />
+                </RadialBarChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex items-center justify-center flex-col">
+                <span className="text-2xl font-bold font-mono text-text-primary">{stats?.readinessScore || 0}%</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="flex items-center p-6 border-l-4 border-l-primary">
-          <div className="p-3 rounded-lg bg-primary/10 text-primary mr-4">
-            <FiList className="w-6 h-6" />
+      {/* ─── Stats Row ─── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'MCQ Tests', value: stats?.totalAssessments || 0, icon: FiList, color: 'text-info', bg: 'bg-info/10' },
+          { label: 'Mock Interviews', value: stats?.totalMockInterviews || 0, icon: FiVideo, color: 'text-success', bg: 'bg-success/10' },
+          { label: 'Analyses', value: stats?.totalAnalyses || 0, icon: FiFileText, color: 'text-warning', bg: 'bg-warning/10' },
+          { label: 'Avg Score', value: `${stats?.averageScore || 0}%`, icon: FiTrendingUp, color: 'text-accent-primary', bg: 'bg-accent-primary/10' }
+        ].map((stat, i) => (
+          <div key={i} className="bg-bg-surface border border-border-subtle rounded-2xl p-5 flex items-center hover:border-accent-primary/30 transition-colors">
+            <div className={`p-3 rounded-xl ${stat.bg} ${stat.color} mr-4`}>
+              <stat.icon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mb-1">{stat.label}</p>
+              <h3 className="text-2xl font-bold font-mono text-text-primary">
+                {stat.value}
+              </h3>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-text-secondary font-medium">MCQ Tests Taken</p>
-            <h3 className="text-2xl font-bold text-text-primary">
-              <AnimatedCounter value={stats?.totalAssessments || 0} />
-            </h3>
-          </div>
-        </Card>
-
-        <Card className="flex items-center p-6 border-l-4 border-l-emerald-500">
-          <div className="p-3 rounded-lg bg-emerald-500/10 text-emerald-500 mr-4">
-            <FiVideo className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-sm text-text-secondary font-medium">Mock Interviews</p>
-            <h3 className="text-2xl font-bold text-text-primary">
-              <AnimatedCounter value={stats?.totalMockInterviews || 0} />
-            </h3>
-          </div>
-        </Card>
-
-        <Card className="flex items-center p-6 border-l-4 border-l-orange-500">
-          <div className="p-3 rounded-lg bg-orange-500/10 text-orange-500 mr-4">
-            <FiFileText className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-sm text-text-secondary font-medium">Job Analyses</p>
-            <h3 className="text-2xl font-bold text-text-primary">
-              <AnimatedCounter value={stats?.totalAnalyses || 0} />
-            </h3>
-          </div>
-        </Card>
-
-        <Card className="flex items-center p-6 border-l-4 border-l-secondary">
-          <div className="p-3 rounded-lg bg-secondary/10 text-secondary mr-4">
-            <FiTrendingUp className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-sm text-text-secondary font-medium">Average Score</p>
-            <h3 className="text-2xl font-bold text-text-primary flex items-baseline">
-              <AnimatedCounter value={stats?.averageScore || 0} />
-              <span className="text-sm text-text-muted ml-1">%</span>
-            </h3>
-          </div>
-        </Card>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-        {/* Readiness Score */}
-        <Card className="lg:col-span-1 flex flex-col items-center justify-center p-6">
-          <h3 className="text-lg font-bold text-text-primary w-full mb-2">Interview Readiness</h3>
-          <p className="text-sm text-text-secondary w-full mb-6">Combined score from all activities</p>
-          
-          <div className="h-48 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadialBarChart 
-                cx="50%" 
-                cy="50%" 
-                innerRadius="70%" 
-                outerRadius="100%" 
-                barSize={15} 
-                data={readinessData}
-                startAngle={180}
-                endAngle={0}
-              >
-                <RadialBar
-                  minAngle={15}
-                  background={{ fill: 'var(--color-surface-hover)' }}
-                  clockWise
-                  dataKey="value"
-                  cornerRadius={10}
-                />
-              </RadialBarChart>
-            </ResponsiveContainer>
+      {/* ─── Charts & Activity ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Performance Trend */}
+        <div className="lg:col-span-2 bg-bg-surface border border-border-subtle rounded-3xl p-6 lg:p-8">
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="text-lg font-bold font-display text-text-primary">Performance Trend</h3>
           </div>
-          
-          <div className="text-center -mt-20">
-            <span className={`text-4xl font-bold ${getGradeColor(stats?.readinessScore || 0)}`}>
-              <AnimatedCounter value={stats?.readinessScore || 0} />%
-            </span>
-            <p className="text-sm text-text-muted mt-1">
-              {stats?.readinessScore >= 80 ? 'Ready to interview!' : 
-               stats?.readinessScore >= 60 ? 'Needs some practice' : 
-               'Keep preparing'}
-            </p>
-          </div>
-        </Card>
-
-        {/* Progress Chart */}
-        <Card className="lg:col-span-2 p-6">
-          <h3 className="text-lg font-bold text-text-primary mb-6">Performance Trend</h3>
           <div className="h-64">
             {hasData ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={displayProgress} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                  <XAxis dataKey="name" stroke="var(--color-text-muted)" fontSize={12} tickMargin={10} />
-                  <YAxis stroke="var(--color-text-muted)" fontSize={12} domain={[0, 100]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-chart-grid)" vertical={false} />
+                  <XAxis dataKey="name" stroke="var(--color-text-secondary)" fontSize={12} tickMargin={10} axisLine={false} tickLine={false} />
+                  <YAxis stroke="var(--color-text-secondary)" fontSize={12} domain={[0, 100]} axisLine={false} tickLine={false} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '8px', color: '#111827' }}
+                    contentStyle={{ backgroundColor: 'var(--color-bg-elevated)', borderColor: 'var(--color-border-subtle)', borderRadius: '12px', color: 'var(--color-text-primary)' }}
+                    itemStyle={{ color: 'var(--color-text-primary)' }}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="score" 
-                    stroke="var(--color-primary)" 
+                    stroke="var(--color-accent-primary)" 
                     strokeWidth={3}
-                    dot={{ fill: 'var(--color-primary)', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6 }} 
+                    dot={{ fill: 'var(--color-bg-surface)', stroke: 'var(--color-accent-primary)', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, fill: 'var(--color-accent-primary)' }} 
                   />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-text-muted">
-                <FiActivity className="w-8 h-8 mb-2 opacity-20" />
-                <p>Take some tests to see your progress</p>
+              <div className="w-full h-full flex flex-col items-center justify-center text-text-secondary bg-bg-canvas/50 rounded-2xl border border-dashed border-border-subtle">
+                <FiActivity className="w-8 h-8 mb-3 opacity-50" />
+                <p className="text-sm">Complete your first interview to see trends</p>
               </div>
             )}
           </div>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        {/* Topic Strengths */}
-        <Card className="p-6">
-          <h3 className="text-lg font-bold text-text-primary mb-6">Topic Strengths</h3>
-          <div className="h-64">
-            {hasData ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={displayTopics} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
-                  <XAxis type="number" domain={[0, 100]} stroke="var(--color-text-muted)" fontSize={12} />
-                  <YAxis dataKey="topic" type="category" stroke="var(--color-text-muted)" fontSize={12} width={100} />
-                  <Tooltip 
-                    cursor={{ fill: 'var(--color-surface-hover)' }}
-                    contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '8px', color: '#111827' }}
-                  />
-                  <Bar dataKey="score" fill="var(--color-secondary)" radius={[0, 4, 4, 0]} barSize={20} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-               <div className="w-full h-full flex items-center justify-center text-text-muted">
-                <p>Complete assessments to see topic analysis</p>
-              </div>
-            )}
-          </div>
-        </Card>
+        </div>
 
         {/* Recent Activity */}
-        <Card className="p-6">
+        <div className="bg-bg-surface border border-border-subtle rounded-3xl p-6 lg:p-8 flex flex-col">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-text-primary">Recent Activity</h3>
-            <Link to="/history" className="text-sm text-primary hover:text-primary-light flex items-center">
+            <h3 className="text-lg font-bold font-display text-text-primary">Recent Sessions</h3>
+            <Link to="/history" className="text-sm text-accent-primary hover:text-accent-glow font-medium flex items-center transition-colors">
               View All <FiArrowRight className="ml-1" />
             </Link>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-3 flex-1">
             {recentActivity?.length > 0 ? (
               recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-start p-3 rounded-lg hover:bg-surface-hover transition-colors border border-transparent hover:border-border">
-                  <div className={`p-2 rounded-lg mr-4 mt-1 flex-shrink-0 ${
-                    activity.type === 'assessment' ? 'bg-primary/10 text-primary' :
-                    activity.type === 'mock_interview' ? 'bg-emerald-500/10 text-emerald-500' :
-                    'bg-orange-500/10 text-orange-500'
+                <div key={index} className="flex items-center p-3 rounded-xl hover:bg-surface-hover transition-colors group">
+                  <div className={`p-2.5 rounded-lg mr-4 shrink-0 ${
+                    activity.type === 'assessment' ? 'bg-info/10 text-info' :
+                    activity.type === 'mock_interview' ? 'bg-success/10 text-success' :
+                    'bg-warning/10 text-warning'
                   }`}>
-                    {activity.type === 'assessment' ? <FiList /> :
-                     activity.type === 'mock_interview' ? <FiVideo /> :
-                     <FiFileText />}
+                    {activity.type === 'assessment' ? <FiList size={18} /> :
+                     activity.type === 'mock_interview' ? <FiVideo size={18} /> :
+                     <FiFileText size={18} />}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-text-primary truncate">{activity.title}</p>
-                    <p className="text-xs text-text-muted mt-1">{formatDate(activity.date)}</p>
+                  <div className="flex-1 min-w-0 pr-4">
+                    <p className="text-sm font-semibold text-text-primary truncate">{activity.title}</p>
+                    <p className="text-xs text-text-secondary mt-0.5">{formatDate(activity.date)}</p>
                   </div>
                   {activity.score !== undefined && (
-                    <div className="text-right ml-4">
-                      <span className={`text-sm font-bold ${getGradeColor(activity.score)}`}>
+                    <div className="text-right flex flex-col items-end shrink-0">
+                      <span className={`text-sm font-bold font-mono px-2 py-1 rounded bg-bg-canvas border border-border-subtle ${
+                        activity.score >= 80 ? 'text-success' : activity.score >= 60 ? 'text-warning' : 'text-danger'
+                      }`}>
                         {activity.score}%
                       </span>
+                      <Link to={`/feedback/${activity.id || ''}`} className="text-[10px] uppercase tracking-wider font-semibold text-text-secondary group-hover:text-accent-primary mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        View
+                      </Link>
                     </div>
                   )}
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-text-muted">
-                <p>No recent activity found.</p>
-                <Link to="/job-analysis" className="text-primary mt-2 inline-block">Analyze a job description to get started</Link>
+              <div className="h-full flex flex-col items-center justify-center text-center py-8">
+                <div className="w-12 h-12 bg-bg-canvas rounded-full flex items-center justify-center text-text-secondary mb-3 border border-border-subtle">
+                  <FiClock size={20} />
+                </div>
+                <p className="text-sm text-text-primary font-medium mb-1">No recent activity</p>
+                <p className="text-xs text-text-secondary">Your completed sessions will appear here.</p>
               </div>
             )}
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

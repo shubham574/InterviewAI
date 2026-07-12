@@ -138,18 +138,18 @@ const AnswerInput = ({ text, setText, isRecording, isTranscribing }) => (
       value={text}
       onChange={(e) => setText(e.target.value)}
       disabled={isTranscribing}
-      className={`w-full px-4 py-3 rounded-xl border-2 bg-surface text-text-primary placeholder-text-muted resize-none transition-all duration-200 outline-none text-base leading-relaxed ${
+      className={`w-full px-4 py-3 rounded-xl border-2 bg-bg-surface text-text-primary placeholder-text-secondary resize-none transition-all duration-200 outline-none text-base leading-relaxed ${
         isRecording
-          ? 'border-error ring-2 ring-error/20'
+          ? 'border-danger ring-2 ring-danger/20'
           : isTranscribing
           ? 'border-warning ring-2 ring-warning/20 opacity-70'
-          : 'border-border focus:border-primary focus:ring-2 focus:ring-primary/20'
+          : 'border-border-subtle focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/20'
       }`}
     />
 
     {isRecording && (
-      <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-error/10 text-error px-2 py-1 rounded-lg text-xs font-medium animate-pulse pointer-events-none">
-        <span className="w-2 h-2 rounded-full bg-error inline-block" />
+      <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-danger/10 text-danger px-2 py-1 rounded-lg text-xs font-medium animate-pulse pointer-events-none">
+        <span className="w-2 h-2 rounded-full bg-danger inline-block" />
         Recording
       </div>
     )}
@@ -170,7 +170,7 @@ const MockInterview = () => {
   const { getToken } = useAuth();
 
   const [jobRole, setJobRole] = useState(location.state?.jobRole || '');
-  const [totalQuestions, setTotalQuestions] = useState('5');
+  const [totalQuestions, setTotalQuestions] = useState(5);
   const [activeInterview, setActiveInterview] = useState(null);
 
   const [currentQIndex, setCurrentQIndex] = useState(0);
@@ -280,7 +280,7 @@ const MockInterview = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="col-span-1 flex flex-col items-center justify-center p-8 text-center border-t-4 border-t-primary">
+          <Card className="col-span-1 flex flex-col items-center justify-center p-8 text-center border-t-4 border-t-accent-primary bg-bg-surface border-border-subtle shadow-md shadow-accent-primary/5">
             <h3 className="text-lg font-medium text-text-secondary mb-4">Overall Performance</h3>
             <div
               className="w-32 h-32 rounded-full border-8 flex items-center justify-center mb-4"
@@ -306,7 +306,7 @@ const MockInterview = () => {
             </p>
           </Card>
 
-          <Card className="col-span-2 p-6">
+          <Card className="col-span-2 p-6 bg-bg-surface border-border-subtle shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-lg font-bold text-success mb-3 flex items-center">
@@ -338,9 +338,11 @@ const MockInterview = () => {
           </Card>
         </div>
 
-        <Card className="p-6 bg-primary/5 border-primary/20">
-          <h3 className="text-lg font-bold text-text-primary mb-2">AI Recommendations</h3>
-          <p className="text-text-secondary">{finalResults.overallFeedback?.recommendations}</p>
+        <Card className="p-6 bg-accent-primary/10 border-accent-glow/30 shadow-md">
+          <h3 className="text-lg font-bold text-text-primary mb-2 flex items-center gap-2">
+            <span className="text-xl">🤖</span> AI Recommendations
+          </h3>
+          <p className="text-text-secondary leading-relaxed">{finalResults.overallFeedback?.recommendations}</p>
         </Card>
 
         <h3 className="text-2xl font-bold text-text-primary mt-10 mb-4">Detailed Question Review</h3>
@@ -349,35 +351,37 @@ const MockInterview = () => {
             const response = finalResults.responses?.find((r) => r.questionIndex === i);
             if (!response) return null;
             return (
-              <Card key={i} className="p-6">
-                <h4 className="text-lg font-medium text-text-primary mb-4">
-                  <span className="text-primary font-bold mr-2">Q{i + 1}.</span>
-                  {q.question}
-                </h4>
-
-                <div className="bg-surface-hover p-4 rounded-lg border border-border mb-4">
-                  <span className="text-xs uppercase font-bold text-text-muted mb-2 block">Your Answer:</span>
-                  <p className="text-text-secondary italic">"{response.userAnswer}"</p>
+              <Card key={i} className="p-6 bg-bg-surface border-border-subtle shadow-sm">
+                <div className="flex items-start justify-between mb-4 pb-4 border-b border-border-subtle">
+                  <h4 className="text-lg font-medium text-text-primary">
+                    <span className="text-accent-primary font-bold mr-2">Q{i + 1}.</span>
+                    {q.question}
+                  </h4>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="bg-bg-canvas p-4 rounded-xl border border-border-subtle mb-5">
+                  <span className="text-xs uppercase font-bold text-text-secondary mb-2 block tracking-wider">Your Answer:</span>
+                  <p className="text-text-primary italic">"{response.userAnswer}"</p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 mb-5">
                   {[
                     { label: 'Technical', key: 'technicalAccuracy' },
                     { label: 'Communication', key: 'communicationClarity' },
                     { label: 'Confidence', key: 'confidenceScore' },
                   ].map(({ label, key }) => (
-                    <div key={key} className="bg-surface p-3 rounded text-center border border-border">
-                      <span className="text-xs text-text-muted block">{label}</span>
-                      <span className={`font-bold ${getGradeColor((response.aiEvaluation?.[key] || 0) * 10)}`}>
+                    <div key={key} className="bg-bg-canvas p-3 rounded-xl text-center border border-border-subtle">
+                      <span className="text-xs text-text-secondary uppercase tracking-wider block mb-1">{label}</span>
+                      <span className={`font-bold text-sm ${getGradeColor((response.aiEvaluation?.[key] || 0) * 10)}`}>
                         {response.aiEvaluation?.[key] ?? '–'}/10
                       </span>
                     </div>
                   ))}
                 </div>
 
-                <div className="bg-primary/5 p-4 rounded-lg border border-primary/20">
-                  <span className="text-xs uppercase font-bold text-primary mb-2 block">AI Feedback:</span>
-                  <p className="text-sm text-text-secondary">{response.aiEvaluation?.feedback}</p>
+                <div className="bg-accent-primary/10 p-5 rounded-xl border border-accent-primary/20">
+                  <span className="text-xs uppercase font-bold text-accent-primary mb-2 block tracking-wider">AI Feedback:</span>
+                  <p className="text-sm text-text-primary leading-relaxed">{response.aiEvaluation?.feedback}</p>
                 </div>
               </Card>
             );
@@ -405,9 +409,9 @@ const MockInterview = () => {
               Question {currentQIndex + 1} of {activeInterview.questions.length}
             </span>
           </div>
-          <div className="w-full bg-surface-hover rounded-full h-2">
+          <div className="w-full bg-bg-surface border border-border-subtle rounded-full h-2">
             <motion.div
-              className="bg-primary h-2 rounded-full"
+              className="bg-accent-primary h-2 rounded-full shadow-[0_0_10px_var(--color-accent-primary)]"
               initial={{ width: 0 }}
               animate={{ width: `${(currentQIndex / activeInterview.questions.length) * 100}%` }}
             />
@@ -429,10 +433,10 @@ const MockInterview = () => {
             {/* Answer area */}
             <div className="flex-1 flex flex-col justify-end">
               {isEvaluating ? (
-                <div className="flex flex-col items-center justify-center p-10 bg-surface-hover rounded-xl border border-border">
+                <div className="flex flex-col items-center justify-center p-10 bg-bg-surface rounded-xl border border-border-subtle">
                   <Loader size="md" />
                   <p className="mt-4 text-text-primary font-medium">AI is evaluating your response...</p>
-                  <p className="text-sm text-text-muted mt-1">Analysing technical accuracy and communication.</p>
+                  <p className="text-sm text-text-secondary mt-1">Analysing technical accuracy and communication.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -517,14 +521,26 @@ const MockInterview = () => {
               required
             />
 
-            <Select
-              id="totalQuestions"
-              label="Number of Questions"
-              options={MOCK_QUESTION_COUNTS}
-              value={totalQuestions}
-              onChange={(e) => setTotalQuestions(e.target.value)}
-              required
-            />
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-text-primary">
+                Number of Questions <span className="text-danger">*</span>
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {MOCK_QUESTION_COUNTS.map((opt) => (
+                  <div
+                    key={opt}
+                    onClick={() => setTotalQuestions(opt)}
+                    className={`cursor-pointer text-center py-3 rounded-xl border-2 transition-all ${
+                      totalQuestions === opt
+                        ? 'border-accent-primary bg-accent-primary/10 text-accent-primary font-bold'
+                        : 'border-border-subtle bg-bg-canvas text-text-secondary hover:border-text-secondary/50'
+                    }`}
+                  >
+                    {opt}
+                  </div>
+                ))}
+              </div>
+            </div>
 
             <Button
               type="submit"
@@ -533,22 +549,24 @@ const MockInterview = () => {
               disabled={!jobRole}
               icon={FiPlay}
               className="mt-4"
+              variant="primary"
             >
               Start Interview
             </Button>
           </form>
         </Card>
 
-        <Card className="bg-surface-hover/50 border-none">
-          <h4 className="font-bold text-text-primary mb-3 flex items-center">
-            <FiVideo className="mr-2 text-primary" /> How it works
+        <Card className="bg-bg-surface border-border-subtle shadow-lg shadow-accent-primary/5 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-accent-primary/10 via-transparent to-transparent pointer-events-none blur-3xl" />
+          <h4 className="font-bold text-text-primary mb-3 flex items-center relative z-10">
+            <FiVideo className="mr-2 text-accent-primary" /> How it works
           </h4>
-          <ul className="space-y-2 text-sm text-text-secondary">
-            <li>• AI generates contextual questions for your role</li>
-            <li>• Click <strong>Record Answer</strong> and speak naturally</li>
-            <li>• Deepgram AI transcribes your speech (supports Indian English)</li>
-            <li>• Gemini AI evaluates your technical accuracy &amp; confidence</li>
-            <li>• Get a full report with strengths &amp; improvements</li>
+          <ul className="space-y-3 text-sm text-text-secondary relative z-10">
+            <li className="flex items-start"><span className="text-accent-primary mr-2">•</span> AI generates contextual questions for your role</li>
+            <li className="flex items-start"><span className="text-accent-primary mr-2">•</span> Click <strong>Record Answer</strong> and speak naturally</li>
+            <li className="flex items-start"><span className="text-accent-primary mr-2">•</span> Deepgram AI transcribes your speech</li>
+            <li className="flex items-start"><span className="text-accent-primary mr-2">•</span> Gemini AI evaluates your technical accuracy &amp; confidence</li>
+            <li className="flex items-start"><span className="text-accent-primary mr-2">•</span> Get a full report with strengths &amp; improvements</li>
           </ul>
         </Card>
       </div>
@@ -578,11 +596,11 @@ const MockInterview = () => {
                 {pastInterviews.data.map((interview) => (
                   <div
                     key={interview._id}
-                    className="p-4 rounded-xl border border-border bg-surface-hover flex justify-between items-center"
+                    className="p-4 rounded-xl border border-border-subtle bg-bg-surface hover:border-accent-primary/30 transition-all flex justify-between items-center"
                   >
                     <div>
                       <h4 className="font-bold text-text-primary">{interview.jobRole}</h4>
-                      <p className="text-sm text-text-muted mt-1">
+                      <p className="text-sm text-text-secondary mt-1">
                         {new Date(interview.createdAt).toLocaleDateString()} •{' '}
                         {interview.questions?.length} Questions
                       </p>
@@ -591,7 +609,7 @@ const MockInterview = () => {
                       {interview.status === 'completed' ? (
                         <>
                           <div className="text-right hidden sm:block">
-                            <span className="text-xs text-text-muted block">Score</span>
+                            <span className="text-xs text-text-secondary block">Score</span>
                             <span className={`font-bold ${getGradeColor(interview.overallFeedback?.averageScore || 0)}`}>
                               {interview.overallFeedback?.averageScore || 0}%
                             </span>

@@ -17,10 +17,10 @@ const Button = ({
   const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background hover:-translate-y-0.5 active:translate-y-0';
   
   const variants = {
-    primary: 'bg-gradient-primary text-white hover:opacity-95 focus:ring-primary/30 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30',
-    secondary: 'bg-white hover:bg-gray-50 text-text-primary border border-gray-200 shadow-[0_2px_10px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_20px_rgb(0,0,0,0.08)]',
-    danger: 'bg-error text-white hover:bg-error/90 shadow-lg shadow-error/20 hover:shadow-xl hover:shadow-error/30',
-    ghost: 'hover:bg-gray-100 text-text-secondary hover:text-text-primary',
+    primary: 'bg-gradient-primary text-white hover:opacity-95 focus:ring-accent-primary/30 shadow-lg shadow-accent-primary/25 hover:shadow-xl hover:shadow-accent-primary/30',
+    secondary: 'bg-bg-surface hover:bg-surface-hover text-text-primary border border-border-subtle shadow-sm hover:shadow-md',
+    danger: 'bg-danger text-white hover:bg-danger/90 shadow-lg shadow-danger/20 hover:shadow-xl hover:shadow-danger/30',
+    ghost: 'hover:bg-surface-hover text-text-secondary hover:text-text-primary',
   };
 
   const sizes = {

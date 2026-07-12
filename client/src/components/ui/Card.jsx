@@ -13,12 +13,12 @@ const Card = ({
   const baseStyles = 'rounded-3xl overflow-hidden relative transition-all duration-300';
   
   const variants = {
-    default: 'bg-white/80 backdrop-blur-md border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]',
-    solid: 'bg-surface border border-border',
-    gradient: 'bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]',
+    default: 'bg-bg-surface backdrop-blur-md border border-border-subtle shadow-sm',
+    solid: 'bg-bg-elevated border border-border-subtle',
+    gradient: 'bg-gradient-to-br from-bg-surface to-bg-elevated border border-border-subtle shadow-sm',
   };
 
-  const hoverStyles = hover ? 'hover:-translate-y-1 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] hover:border-primary/30 cursor-pointer group' : '';
+  const hoverStyles = hover ? 'hover:-translate-y-1 hover:shadow-md hover:border-accent-primary/30 cursor-pointer group' : '';
 
   const CardWrapper = hover || onClick ? motion.div : 'div';
   const motionProps = (hover || onClick) ? {

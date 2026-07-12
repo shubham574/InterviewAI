@@ -2,11 +2,13 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import { ReactLenis } from 'lenis/react';
 
 // Components
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import CustomCursor from './components/ui/CustomCursor';
 
 // Pages
 import Landing from './pages/Landing';
@@ -37,31 +39,34 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <Router>
-          <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Landing />} />
-            <Route path="/login/*" element={<Login />} />
-            <Route path="/register/*" element={<Register />} />
+      <CustomCursor />
+      <ReactLenis root>
+        <QueryClientProvider client={queryClient}>
+          <Router>
+            <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Landing />} />
+              <Route path="/login/*" element={<Login />} />
+              <Route path="/register/*" element={<Register />} />
 
-            {/* Protected Routes inside Layout */}
-            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/job-analysis" element={<JobAnalysis />} />
-              <Route path="/mcq-generator" element={<MCQGenerator />} />
-              <Route path="/assessment/:id" element={<AssessmentTest />} />
-              <Route path="/interview-questions" element={<InterviewQuestions />} />
-              <Route path="/mock-interview" element={<MockInterview />} />
-              <Route path="/live-interview" element={<LiveInterview />} />
-              <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
-              <Route path="/history" element={<History />} />
-              <Route path="/profile/*" element={<Profile />} />
-            </Route>
-          </Routes>
-        </Router>
-      </QueryClientProvider>
+              {/* Protected Routes inside Layout */}
+              <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/job-analysis" element={<JobAnalysis />} />
+                <Route path="/mcq-generator" element={<MCQGenerator />} />
+                <Route path="/assessment/:id" element={<AssessmentTest />} />
+                <Route path="/interview-questions" element={<InterviewQuestions />} />
+                <Route path="/mock-interview" element={<MockInterview />} />
+                <Route path="/live-interview" element={<LiveInterview />} />
+                <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
+                <Route path="/history" element={<History />} />
+                <Route path="/profile/*" element={<Profile />} />
+              </Route>
+            </Routes>
+          </Router>
+        </QueryClientProvider>
+      </ReactLenis>
     </ErrorBoundary>
   );
 }

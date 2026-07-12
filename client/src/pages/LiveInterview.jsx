@@ -244,7 +244,7 @@ const LiveInterview = () => {
   const [userName, setUserName] = useState('');
   const [jobRole, setJobRole] = useState('');
   const [jobDescription, setJobDescription] = useState('');
-  const [totalQuestions, setTotalQuestions] = useState('5');
+  const [totalQuestions, setTotalQuestions] = useState(5);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // ── Session state
@@ -476,7 +476,7 @@ const LiveInterview = () => {
 
         {/* Score overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="col-span-1 flex flex-col items-center justify-center p-8 text-center border-t-4 border-t-primary">
+          <Card className="col-span-1 flex flex-col items-center justify-center p-8 text-center border-t-4 border-t-accent-primary bg-bg-surface border-border-subtle shadow-md shadow-accent-primary/5">
             <h3 className="text-lg font-medium text-text-secondary mb-4">Overall Score</h3>
             <div
               className="w-32 h-32 rounded-full border-8 flex items-center justify-center mb-4"
@@ -492,10 +492,10 @@ const LiveInterview = () => {
               {overallFeedback?.averageScore >= 70 ? '🌟 Excellent!' :
                overallFeedback?.averageScore >= 50 ? '👍 Good effort!' : '📚 Keep practicing!'}
             </p>
-            <p className="text-xs text-text-muted mt-1">{overallFeedback?.totalTurns} total attempts</p>
+            <p className="text-xs text-text-secondary mt-2">{overallFeedback?.totalTurns} total attempts</p>
           </Card>
 
-          <Card className="col-span-2 p-6">
+          <Card className="col-span-2 p-6 bg-bg-surface border-border-subtle shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-lg font-bold text-success mb-3 flex items-center gap-2">
@@ -527,9 +527,11 @@ const LiveInterview = () => {
           </Card>
         </div>
 
-        <Card className="p-6 bg-primary/5 border-primary/20">
-          <h3 className="text-lg font-bold text-text-primary mb-2">Shristi's Recommendations</h3>
-          <p className="text-text-secondary">{overallFeedback?.recommendations}</p>
+        <Card className="p-6 bg-accent-primary/10 border-accent-glow/30 shadow-md">
+          <h3 className="text-lg font-bold text-text-primary mb-2 flex items-center gap-2">
+            <span className="text-xl">👩‍💼</span> Shristi's Recommendations
+          </h3>
+          <p className="text-text-secondary leading-relaxed">{overallFeedback?.recommendations}</p>
         </Card>
 
         {/* Detailed transcript */}
@@ -540,15 +542,15 @@ const LiveInterview = () => {
             const allAttempts = (turns || []).filter((t) => t.questionIndex === i);
             if (!best) return null;
             return (
-              <Card key={i} className="p-6">
-                <div className="flex items-start justify-between mb-3">
+              <Card key={i} className="p-6 bg-bg-surface border-border-subtle shadow-sm">
+                <div className="flex items-start justify-between mb-4 pb-4 border-b border-border-subtle">
                   <h4 className="text-lg font-medium text-text-primary flex-1">
-                    <span className="text-primary font-bold mr-2">Q{i + 1}.</span>{q.question}
+                    <span className="text-accent-primary font-bold mr-2">Q{i + 1}.</span>{q.question}
                   </h4>
                   <div className="flex items-center gap-2 ml-4 flex-shrink-0">
                     <Badge variant="secondary">{q.category}</Badge>
                     {allAttempts.length > 1 && (
-                      <span className="text-xs text-warning bg-warning/10 px-2 py-0.5 rounded-full">
+                      <span className="text-xs text-warning bg-warning/10 px-2 py-0.5 rounded-full border border-warning/20">
                         {allAttempts.length} attempts
                       </span>
                     )}
@@ -556,13 +558,13 @@ const LiveInterview = () => {
                 </div>
 
                 {allAttempts.map((turn, ti) => (
-                  <div key={ti} className={`mb-3 p-3 rounded-lg border ${turn.isPassing ? 'bg-success/5 border-success/20' : 'bg-surface-hover border-border'}`}>
+                  <div key={ti} className={`mb-3 p-4 rounded-xl border ${turn.isPassing ? 'bg-success/5 border-success/20' : 'bg-bg-canvas border-border-subtle'}`}>
                     {allAttempts.length > 1 && (
-                      <span className="text-xs font-bold text-text-muted uppercase mb-1 block">
+                      <span className="text-xs font-bold text-text-secondary uppercase mb-2 block tracking-wider">
                         Attempt {turn.attempt}
                       </span>
                     )}
-                    <p className="text-sm text-text-secondary italic">"{turn.userAnswer}"</p>
+                    <p className="text-sm text-text-primary italic">"{turn.userAnswer}"</p>
                   </div>
                 ))}
 
@@ -572,16 +574,16 @@ const LiveInterview = () => {
                     { label: 'Status', val: best.isPassing ? '✅ Passed' : '❌ Needs Work' },
                     { label: 'Action', val: best.action === 'next' ? '➡️ Next' : best.action === 'retry' ? '🔄 Retry' : '🔍 Follow-up' },
                   ].map(({ label, val }) => (
-                    <div key={label} className="bg-surface p-3 rounded-lg text-center border border-border">
-                      <span className="text-xs text-text-muted block">{label}</span>
+                    <div key={label} className="bg-bg-canvas p-3 rounded-xl text-center border border-border-subtle">
+                      <span className="text-xs text-text-secondary uppercase tracking-wider block mb-1">{label}</span>
                       <span className={`font-bold text-sm ${getGradeColor((best.score || 0) * 10)}`}>{val}</span>
                     </div>
                   ))}
                 </div>
 
-                <div className="bg-primary/5 p-4 rounded-lg border border-primary/20">
-                  <span className="text-xs uppercase font-bold text-primary mb-2 block">Shristi's Feedback:</span>
-                  <p className="text-sm text-text-secondary">{best.feedback}</p>
+                <div className="bg-accent-primary/10 p-5 rounded-xl border border-accent-primary/20">
+                  <span className="text-xs uppercase font-bold text-accent-primary mb-2 block tracking-wider">Shristi's Feedback:</span>
+                  <p className="text-sm text-text-primary leading-relaxed">{best.feedback}</p>
                 </div>
               </Card>
             );
@@ -595,7 +597,7 @@ const LiveInterview = () => {
   const renderAppContainer = (content) => (
     <div 
       ref={containerRef} 
-      className={`bg-background transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 h-screen w-screen overflow-hidden flex flex-col p-4 sm:p-6' : 'h-[calc(100vh-5rem)] overflow-hidden flex flex-col p-4 sm:p-6'}`}
+      className={`bg-bg-canvas transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 h-screen w-screen overflow-hidden flex flex-col p-4 sm:p-6' : 'h-[calc(100vh-5rem)] overflow-hidden flex flex-col p-4 sm:p-6'}`}
     >
        <SEOHead title={`Live Interview — ${jobRole}`} />
        {content}
@@ -656,7 +658,7 @@ const LiveInterview = () => {
           </div>
           <div className="w-full bg-surface-hover rounded-full h-2">
             <motion.div
-              className="bg-primary h-2 rounded-full"
+              className="bg-accent-primary h-2 rounded-full"
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.4 }}
             />
@@ -668,22 +670,24 @@ const LiveInterview = () => {
           
           {/* Left - Avatars */}
           <div className="md:col-span-1 flex flex-row md:flex-col gap-4">
-             <Card className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-100">
+             <Card className="flex-1 flex items-center justify-center p-6 bg-bg-surface border-border-subtle shadow-md shadow-accent-primary/5 relative overflow-hidden">
+               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-accent-primary/10 to-transparent pointer-events-none" />
                <ShristiAvatar isSpeaking={isSpeaking} isThinking={isThinking} />
              </Card>
-             <Card className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-100">
+             <Card className="flex-1 flex items-center justify-center p-6 bg-bg-surface border-border-subtle shadow-md shadow-success/5 relative overflow-hidden">
+               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-success/10 to-transparent pointer-events-none" />
                <UserAvatar isSpeaking={isRecording} imageUrl={user?.imageUrl} name={userName} />
              </Card>
           </div>
 
           {/* Right - Chat & Controls */}
-          <Card className="md:col-span-2 flex flex-col p-0 overflow-hidden bg-gray-50/50">
+          <Card className="md:col-span-2 flex flex-col p-0 overflow-hidden bg-bg-canvas border-border-subtle">
              
              {/* WhatsApp Style Chat Area */}
-             <div className="flex-1 overflow-y-auto p-4 space-y-4">
+             <div className="flex-1 overflow-y-auto p-6 space-y-5 scrollbar-thin">
                 {chatHistory.map(msg => (
                    <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[85%] p-3.5 rounded-2xl ${msg.sender === 'user' ? 'bg-primary text-white rounded-tr-none' : 'bg-white border border-gray-200 text-gray-800 rounded-tl-none shadow-sm'}`}>
+                      <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm border ${msg.sender === 'user' ? 'bg-accent-primary border-accent-glow text-white rounded-tr-none' : 'bg-bg-surface border-border-subtle text-text-primary rounded-tl-none'}`}>
                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
                       </div>
                    </div>
@@ -691,16 +695,16 @@ const LiveInterview = () => {
                 
                 {isThinking && (
                    <div className="flex justify-start">
-                      <div className="bg-white border border-gray-200 p-3.5 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-2">
-                         <FiLoader className="animate-spin text-primary" />
-                         <span className="text-sm text-gray-500 italic">Shristi is thinking...</span>
+                      <div className="bg-bg-surface border border-border-subtle p-4 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-3">
+                         <FiLoader className="animate-spin text-accent-primary" />
+                         <span className="text-sm text-text-secondary italic">Shristi is thinking...</span>
                       </div>
                    </div>
                 )}
                 
                 {isTranscribing && (
                    <div className="flex justify-end">
-                      <div className="bg-primary/80 text-white p-3.5 rounded-2xl rounded-tr-none flex items-center gap-2 shadow-sm">
+                      <div className="bg-accent-primary/80 border border-accent-glow/50 text-white p-4 rounded-2xl rounded-tr-none flex items-center gap-3 shadow-sm">
                          <FiLoader className="animate-spin" />
                          <span className="text-sm italic">Transcribing...</span>
                       </div>
@@ -710,9 +714,9 @@ const LiveInterview = () => {
              </div>
 
              {/* Controls */}
-             <div className="p-4 bg-white border-t border-gray-100 flex-shrink-0 flex flex-col items-center justify-center gap-2">
+             <div className="p-5 bg-bg-surface border-t border-border-subtle flex-shrink-0 flex flex-col items-center justify-center gap-3">
                 {recorderError && (
-                  <div className="flex items-center gap-2 text-xs text-error bg-error/10 px-3 py-1.5 rounded-lg mb-2">
+                  <div className="flex items-center gap-2 text-xs text-danger bg-danger/10 px-3 py-1.5 rounded-lg mb-2">
                     <FiAlertCircle /> {recorderError}
                   </div>
                 )}
@@ -720,7 +724,7 @@ const LiveInterview = () => {
                 {isRecording ? (
                    <button 
                      onClick={toggleRecording} 
-                     className="flex items-center gap-2 bg-error text-white px-8 py-3 rounded-full font-bold hover:bg-error/90 transition-all animate-pulse shadow-lg shadow-error/30"
+                     className="flex items-center gap-2 bg-danger text-white px-8 py-3.5 rounded-full font-bold hover:bg-danger/90 transition-all animate-pulse shadow-lg shadow-danger/30"
                    >
                       <FiStopCircle className="w-5 h-5" /> Stop & Submit Answer
                    </button>
@@ -728,12 +732,12 @@ const LiveInterview = () => {
                    <button 
                      onClick={toggleRecording} 
                      disabled={isSpeaking || isSubmitting || isTranscribing} 
-                     className="flex items-center gap-2 bg-primary text-white px-8 py-3 rounded-full font-bold hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-primary/20"
+                     className="flex items-center gap-2 bg-accent-primary text-white px-8 py-3.5 rounded-full font-bold hover:bg-accent-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-accent-primary/20"
                    >
                       <FiMic className="w-5 h-5" /> {isSpeaking ? "Wait for Shristi..." : "Tap to Answer"}
                    </button>
                 )}
-                <p className="text-xs text-gray-400 font-medium">
+                <p className="text-xs text-text-muted font-medium">
                    {isRecording ? "Listening to your answer..." : "Answers are automatically transcribed and submitted."}
                 </p>
              </div>
@@ -787,26 +791,37 @@ const LiveInterview = () => {
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-xl border-2 border-border bg-surface text-text-primary placeholder-text-muted resize-none transition-all duration-200 outline-none text-sm focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="w-full px-4 py-3 rounded-xl border-2 border-border-subtle bg-bg-surface text-text-primary placeholder-text-secondary resize-none transition-all duration-200 outline-none text-sm focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/20"
               />
             </div>
-            <Select
-              id="totalQuestions"
-              label="Number of Questions"
-              options={MOCK_QUESTION_COUNTS}
-              value={totalQuestions}
-              onChange={(e) => setTotalQuestions(e.target.value)}
-              required
-            />
-            <Button
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-text-primary">
+                Number of Questions <span className="text-danger">*</span>
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {MOCK_QUESTION_COUNTS.map((opt) => (
+                  <div
+                    key={opt}
+                    onClick={() => setTotalQuestions(opt)}
+                    className={`cursor-pointer text-center py-3 rounded-xl border-2 transition-all ${
+                      totalQuestions === opt
+                        ? 'border-accent-primary bg-accent-primary/10 text-accent-primary font-bold'
+                        : 'border-border-subtle bg-bg-canvas text-text-secondary hover:border-text-secondary/50'
+                    }`}
+                  >
+                    {opt}
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <button
               type="submit"
-              fullWidth
               disabled={!userName || !jobRole || !jobDescription}
-              icon={FiArrowRight}
-              className="mt-4"
+              className="w-full bg-accent-primary text-white px-4 py-3 rounded-xl font-bold hover:bg-accent-glow transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-4 shadow-md shadow-accent-primary/20"
             >
-              Start Interview with Shristi
-            </Button>
+              Start Interview with Shristi <FiArrowRight />
+            </button>
           </form>
         </Card>
       </div>
@@ -814,10 +829,12 @@ const LiveInterview = () => {
       {/* Right — about Shristi */}
       <div className="w-full lg:w-7/12 flex flex-col gap-6">
         {/* Shristi intro card */}
-        <Card className="p-8 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 border-indigo-100">
-          <div className="flex items-center gap-5 mb-6">
-            <div className="w-20 h-20 rounded-full flex items-center justify-center text-4xl shadow-lg border-4 border-white"
-              style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' }}>
+        <Card className="p-8 bg-bg-surface border-border-subtle shadow-lg shadow-accent-primary/5 relative overflow-hidden">
+          <div className="absolute top-[-20%] right-[-10%] w-[300px] h-[300px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-accent-primary/10 via-transparent to-transparent pointer-events-none blur-3xl" />
+          
+          <div className="flex items-center gap-5 mb-6 relative z-10">
+            <div className="w-20 h-20 rounded-full flex items-center justify-center text-4xl shadow-lg border-2 border-border-subtle"
+              style={{ background: 'linear-gradient(135deg, #1C1D21 0%, #26272B 100%)' }}>
               👩‍💼
             </div>
             <div>
@@ -837,8 +854,7 @@ const LiveInterview = () => {
           </p>
         </Card>
 
-        {/* How it works */}
-        <Card className="p-6">
+        <Card className="p-6 bg-bg-surface border-border-subtle">
           <h3 className="font-bold text-text-primary mb-4">How it works</h3>
           <div className="space-y-4">
             {[
@@ -848,7 +864,7 @@ const LiveInterview = () => {
               { icon: FiStar, step: '4', title: 'Get a full performance report', desc: 'After the interview, see your score per question, strengths, areas to improve, and Shristi\'s final recommendation.' },
             ].map(({ icon: Icon, step, title, desc }) => (
               <div key={step} className="flex items-start gap-4">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary font-bold text-sm flex-shrink-0">
                   {step}
                 </div>
                 <div>

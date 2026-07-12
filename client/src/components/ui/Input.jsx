@@ -11,9 +11,9 @@ const Input = forwardRef(({
   rows = 4,
   ...props
 }, ref) => {
-  const baseInputStyles = 'w-full bg-white border border-gray-200 rounded-xl text-text-primary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm';
+  const baseInputStyles = 'w-full bg-bg-surface border border-border-subtle rounded-xl text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary transition-all shadow-sm';
   const paddingStyles = Icon ? 'pl-10 pr-4 py-2' : 'px-4 py-2';
-  const errorStyles = error ? 'border-error focus:ring-error/50 focus:border-error' : '';
+  const errorStyles = error ? 'border-danger focus:ring-danger/50 focus:border-danger' : '';
 
   return (
     <div className={`flex flex-col space-y-1.5 ${className}`}>
@@ -48,7 +48,7 @@ const Input = forwardRef(({
         )}
       </div>
       {error && (
-        <span className="text-sm text-error mt-1">{error}</span>
+        <span className="text-sm text-danger mt-1">{error}</span>
       )}
     </div>
   );

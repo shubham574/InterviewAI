@@ -1,11 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
+import { useTheme } from '../hooks/useTheme';
+import { motion, useScroll, useTransform, AnimatePresence, useReducedMotion } from 'motion/react';
 import { 
   FiMenu, FiX, FiBriefcase, FiList, FiMessageSquare, 
-  FiVideo, FiFileText, FiTrendingUp, FiArrowRight, FiCheckCircle 
+  FiVideo, FiFileText, FiTrendingUp, FiArrowRight, FiCheckCircle,
+  FiSun, FiMoon, FiGithub, FiLinkedin
 } from 'react-icons/fi';
+import Preloader from '../components/ui/Preloader';
+import MagneticButton from '../components/ui/MagneticButton';
+import TiltCard from '../components/ui/TiltCard';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 // ─── Custom Hook for Scroll Reveal ───
 const useScrollReveal = (threshold = 0.1) => {
@@ -38,6 +47,11 @@ const AnimatedNumber = ({ end, duration = 2000, suffix = '' }) => {
 
   useEffect(() => {
     if (!isVisible) return;
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+       setCount(end);
+       return;
+    }
     let startTimestamp = null;
     const step = (timestamp) => {
       if (!startTimestamp) startTimestamp = timestamp;
@@ -55,9 +69,159 @@ const AnimatedNumber = ({ end, duration = 2000, suffix = '' }) => {
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 };
 
+// ─── Hero Animation Component ───
+const TypingIndicator = () => (
+  <div className="flex space-x-1 items-center bg-bg-elevated px-3 py-2 rounded-2xl w-fit border border-border-subtle">
+    <motion.div className="w-1.5 h-1.5 bg-text-secondary rounded-full" animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0 }} />
+    <motion.div className="w-1.5 h-1.5 bg-text-secondary rounded-full" animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }} />
+    <motion.div className="w-1.5 h-1.5 bg-text-secondary rounded-full" animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.4 }} />
+  </div>
+);
+
+const exchanges = [
+  {
+    q: "How would you optimize a slow React application?",
+    a: "I'd use React.memo for pure components, useMemo for expensive calculations, and implement code splitting with React.lazy.",
+    f: "Great answer! Practical and comprehensive. +10 pts"
+  },
+  {
+    q: "What is the purpose of the useEffect hook?",
+    a: "It allows you to perform side effects in functional components, like data fetching, subscriptions, or manual DOM manipulations.",
+    f: "Spot on! Very clear explanation. +10 pts"
+  },
+  {
+    q: "Can you explain the virtual DOM in React?",
+    a: "It's a lightweight copy of the actual DOM. React compares it with the real DOM using a diffing algorithm, and updates only the changed parts.",
+    f: "Excellent! You highlighted the diffing algorithm correctly. +10 pts"
+  },
+  {
+    q: "What is the difference between state and props?",
+    a: "Props are read-only and passed from parent to child, while state is local, mutable data managed within the component itself.",
+    f: "Perfect distinction. Clear and concise. +10 pts"
+  },
+  {
+    q: "How do you handle state management in a large application?",
+    a: "I prefer using Context API for simple global state, and Redux or Zustand for more complex state logic with many updates.",
+    f: "Good architectural sense! Solid reasoning. +10 pts"
+  }
+];
+
+const HeroMockInterview = () => {
+  const [exchangeIndex, setExchangeIndex] = useState(0);
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStep(s => {
+        if (s === 3) {
+          setExchangeIndex(i => (i + 1) % exchanges.length);
+          return 0; // Go back to question only
+        }
+        return s + 1;
+      });
+    }, 2800);
+    return () => clearInterval(timer);
+  }, []);
+
+  const current = exchanges[exchangeIndex];
+
+  return (
+    <div className="relative w-full max-w-lg mx-auto bg-bg-surface border border-border-subtle rounded-2xl p-4 md:p-6 shadow-glow overflow-hidden h-[340px] flex flex-col">
+      {/* Browser chrome */}
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-border-subtle shrink-0">
+        <div className="flex items-center space-x-2">
+          <div className="w-3 h-3 rounded-full bg-border-subtle hover:bg-red-500 transition-colors" />
+          <div className="w-3 h-3 rounded-full bg-border-subtle hover:bg-yellow-500 transition-colors" />
+          <div className="w-3 h-3 rounded-full bg-border-subtle hover:bg-green-500 transition-colors" />
+        </div>
+        <div className="text-xs font-mono text-text-secondary flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+          Live Session
+        </div>
+      </div>
+
+      <div className="space-y-4 font-body text-sm relative flex-1 overflow-hidden flex flex-col justify-end pb-2">
+        <AnimatePresence mode="sync">
+          {/* Question */}
+          <motion.div key={`q-${exchangeIndex}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0.2 } }} className="flex justify-start shrink-0">
+            <div className="bg-bg-elevated border border-border-subtle text-text-primary px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%] shadow-sm">
+              <span className="font-semibold text-accent-glow text-xs block mb-1">AI Interviewer</span>
+              {current.q}
+            </div>
+          </motion.div>
+
+          {/* Typing indicator */}
+          {step === 1 && (
+            <motion.div key={`t-${exchangeIndex}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.2 } }} className="flex justify-end mt-4 shrink-0">
+              <TypingIndicator />
+            </motion.div>
+          )}
+
+          {/* Answer */}
+          {step >= 2 && (
+            <motion.div key={`a-${exchangeIndex}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0.2 } }} className="flex justify-end mt-4 shrink-0">
+              <div className="bg-accent-primary text-white px-4 py-3 rounded-2xl rounded-tr-sm max-w-[85%] shadow-md">
+                {current.a}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Feedback */}
+          {step >= 3 && (
+            <motion.div key={`f-${exchangeIndex}`} initial={{ opacity: 0, scale: 0.9, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0.2 } }} className="flex justify-start mt-4 shrink-0">
+               <div className="bg-success/10 border border-success/20 text-success px-4 py-2.5 rounded-xl flex items-center gap-2 font-medium">
+                 <FiCheckCircle size={16} />
+                 <span>{current.f}</span>
+               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
 // ─── Main Landing Page Component ───
 const Landing = () => {
   const [scrolled, setScrolled] = useState(false);
+  const [preloaderComplete, setPreloaderComplete] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const shouldReduceMotion = useReducedMotion();
+  
+  const howItWorksRef = useRef(null);
+
+  // ─── Animation Config Helpers ───
+  const getMechanicalContainer = () => ({
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: shouldReduceMotion ? 0 : 0.08 } }
+  });
+  const getMechanicalItem = () => ({
+    hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 24 },
+    visible: { opacity: 1, y: 0, transition: { duration: shouldReduceMotion ? 0.15 : 0.5, ease: [0.16, 1, 0.3, 1] } }
+  });
+  
+  const getWarmContainer = () => ({
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: shouldReduceMotion ? 0 : 0.06 } }
+  });
+  const getWarmItem = () => ({
+    hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 32 },
+    visible: { opacity: 1, y: 0, transition: { duration: shouldReduceMotion ? 0.15 : 0.7, type: shouldReduceMotion ? 'tween' : 'spring', bounce: shouldReduceMotion ? 0 : 0.25 } }
+  });
+
+  const getDecisiveContainer = () => ({
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: shouldReduceMotion ? 0 : 0.08 } }
+  });
+  const getDecisiveItem = () => ({
+    hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 28 },
+    visible: { opacity: 1, y: 0, transition: { duration: shouldReduceMotion ? 0.15 : 0.5, ease: 'easeOut' } }
+  });
+  const getDecisiveButton = () => ({
+    hidden: { opacity: 0, scale: shouldReduceMotion ? 1 : 0.96 },
+    visible: { opacity: 1, scale: 1, transition: { duration: shouldReduceMotion ? 0.15 : 0.4, ease: 'easeOut' } }
+  });
+  // ─── /Animation Config Helpers ───
 
   // Handle scroll for navbar shadow
   useEffect(() => {
@@ -65,6 +229,118 @@ const Landing = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // GSAP Scroll Animations for How It Works
+  useEffect(() => {
+    if (!preloaderComplete) return;
+
+    let ctx = gsap.context(() => {
+      // Light Trail Animation
+      const wrapper = document.querySelector('.space-y-32');
+      const svg = document.querySelector('#trail-svg');
+      const trackPath = document.querySelector('#track-path');
+      const brightPath = document.querySelector('#bright-path');
+      const comet = document.querySelector('#comet-dot');
+      const nodes = document.querySelectorAll('.trail-node');
+      
+      if (!wrapper || !svg) return;
+
+      let totalLength = 0;
+      const proxy = { progress: 0 };
+
+      const resize = () => {
+        const w = wrapper.clientWidth;
+        const h = wrapper.clientHeight;
+        if (w === 0 || h === 0) return;
+
+        svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+        
+        const isMobile = window.innerWidth < 768;
+        let d = '';
+        if (isMobile) {
+           const x = 32;
+           d = `M ${x} 0 L ${x} ${h}`;
+           const pts = [{x, y: h * 0.16}, {x, y: h * 0.5}, {x, y: h * 0.83}];
+           nodes.forEach((n, i) => {
+             n.setAttribute('transform', `translate(${pts[i].x}, ${pts[i].y})`);
+           });
+        } else {
+           const startX = w * 0.5;
+           // Align with text panels: Card 1 (Left), Card 2 (Right), Card 3 (Left)
+           const c1x = w * 0.25; const c1y = h * 0.16;
+           const c2x = w * 0.75; const c2y = h * 0.50;
+           const c3x = w * 0.25; const c3y = h * 0.83;
+           
+           d = `M ${startX} 0 C ${startX} ${c1y * 0.5}, ${c1x} ${c1y * 0.5}, ${c1x} ${c1y} C ${c1x} ${c1y + (c2y - c1y) * 0.5}, ${c2x} ${c2y - (c2y - c1y) * 0.5}, ${c2x} ${c2y} C ${c2x} ${c2y + (c3y - c2y) * 0.5}, ${c3x} ${c3y - (c3y - c2y) * 0.5}, ${c3x} ${c3y} C ${c3x} ${h - (h - c3y) * 0.5}, ${startX} ${h - (h - c3y) * 0.5}, ${startX} ${h}`;
+           
+           const pts = [{x: c1x, y: c1y}, {x: c2x, y: c2y}, {x: c3x, y: c3y}];
+           nodes.forEach((n, i) => {
+             n.setAttribute('transform', `translate(${pts[i].x}, ${pts[i].y})`);
+           });
+        }
+        
+        trackPath.setAttribute('d', d);
+        brightPath.setAttribute('d', d);
+        totalLength = brightPath.getTotalLength();
+        
+        brightPath.style.strokeDasharray = totalLength;
+        // Keep current progress visually synced if resizing mid-scroll
+        if (proxy && totalLength > 0) {
+           brightPath.style.strokeDashoffset = totalLength * (1 - proxy.progress);
+        } else {
+           brightPath.style.strokeDashoffset = totalLength;
+        }
+
+        ScrollTrigger.refresh();
+      };
+      
+      const resizeObserver = new ResizeObserver(() => resize());
+      resizeObserver.observe(wrapper);
+      
+      gsap.to(proxy, {
+        progress: 1,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: '#how-it-works',
+          start: 'top 50%',
+          end: 'bottom 50%',
+          scrub: 1,
+          onUpdate: () => {
+            const p = proxy.progress;
+            brightPath.style.strokeDashoffset = totalLength * (1 - p);
+            
+            if (p > 0.01 && p < 0.99 && totalLength > 0) {
+              comet.style.opacity = 1;
+              try {
+                const pt = brightPath.getPointAtLength(p * totalLength);
+                comet.setAttribute('cx', pt.x);
+                comet.setAttribute('cy', pt.y);
+              } catch (e) {
+                // Ignore if path is uninitialized
+              }
+            } else {
+              comet.style.opacity = 0;
+            }
+            
+            nodes.forEach((n, i) => {
+               const thresholds = [0.18, 0.50, 0.82]; // Match arc lengths
+               const thresh = thresholds[i];
+               const inner = n.querySelector('.inner-glow');
+               if (p >= thresh) {
+                  gsap.to(inner, { scale: 1, opacity: 1, duration: 0.4, overwrite: 'auto' });
+               } else {
+                  gsap.to(inner, { scale: 0, opacity: 0, duration: 0.4, overwrite: 'auto' });
+               }
+            });
+          }
+        }
+      });
+      
+      return () => resizeObserver.disconnect();
+    }, howItWorksRef);
+
+    return () => ctx.revert();
+  }, [preloaderComplete]);
 
   const scrollToSection = (id) => {
     const element = document.getElementById(id);
@@ -74,466 +350,585 @@ const Landing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-text-primary font-body overflow-x-hidden">
+    <>
+      {!preloaderComplete && <Preloader onComplete={() => setPreloaderComplete(true)} />}
+      
+      <div className="min-h-screen bg-bg-canvas text-text-primary font-body overflow-x-hidden">
       
       {/* ─── 1. Navigation Bar ─── */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'glass shadow-sm py-3' : 'bg-transparent py-5'}`}>
-        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 flex justify-center pt-6 px-4`}>
+        <div className={`flex justify-between items-center transition-all duration-300 w-full ${scrolled ? 'glass px-6 py-3 rounded-full max-w-4xl border-border-subtle shadow-md' : 'px-6 py-3 max-w-7xl'}`}>
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group">
-
+          <Link to="/" className="flex items-center space-x-2 group shrink-0">
             <span className="text-xl font-bold tracking-tight text-text-primary">
               InterviewAce
             </span>
           </Link>
 
           {/* Desktop Links */}
-          <nav className="hidden lg:flex items-center space-x-8">
-            <button onClick={() => scrollToSection('features')} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors">Features</button>
-            <button onClick={() => scrollToSection('how-it-works')} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors">How It Works</button>
-            <button onClick={() => scrollToSection('testimonials')} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors">Testimonials</button>
+          <nav className="hidden md:flex items-center space-x-8">
+            <button onClick={() => scrollToSection('features')} className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">Features</button>
+            <button onClick={() => scrollToSection('how-it-works')} className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">How it works</button>
+            <button onClick={() => scrollToSection('testimonials')} className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">Testimonials</button>
           </nav>
 
-          {/* Auth Buttons */}
-          <div className="flex items-center space-x-2 sm:space-x-4">
+          {/* Auth & Theme Buttons */}
+          <div className="flex items-center space-x-3 shrink-0">
+            <button 
+              onClick={toggleTheme} 
+              className="p-2 rounded-full hover:bg-bg-elevated transition-colors text-text-secondary hover:text-text-primary mr-1"
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? <FiMoon size={18} /> : <FiSun size={18} />}
+            </button>
             <SignedIn>
-              <Link to="/dashboard" className="text-sm font-medium text-text-secondary hover:text-primary transition-colors">
+              <Link to="/dashboard" className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors mr-2">
                 Dashboard
               </Link>
               <UserButton afterSignOutUrl="/" />
             </SignedIn>
             <SignedOut>
-              <Link to="/login" className="text-sm font-medium text-text-secondary hover:text-primary transition-colors">
+              <Link to="/login" className="hidden sm:block text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">
                 Log In
               </Link>
-              <Link to="/register" className="bg-gray-900 text-white px-6 py-2.5 rounded-full font-semibold text-sm hover:bg-gray-800 transition-all shadow-md hover-lift">
-                Get Started Free
+              <Link to="/register" className="bg-text-primary text-bg-canvas px-5 py-2 rounded-full font-semibold text-sm hover:opacity-90 transition-all shadow-md hover-lift">
+                Start Free Interview
               </Link>
             </SignedOut>
           </div>
-
         </div>
       </header>
 
       {/* ─── 2. Hero Section ─── */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden isolate">
-        {/* Background Video */}
-        <video 
-          autoPlay 
-          loop 
-          muted 
-          playsInline 
-          className="absolute inset-0 w-full h-full object-cover -z-30 opacity-100"
-        >
-          <source src="/interview.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-        {/* Overlay removed as requested */}
+      <section className="relative pt-40 pb-20 lg:pt-48 lg:pb-32 overflow-hidden isolate">
+        
+        {/* Decorative Glows */}
+        <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-accent-primary/10 rounded-full blur-[120px] pointer-events-none -z-10" />
+        <div className="absolute top-[10%] right-[-10%] w-96 h-96 bg-accent-glow/10 rounded-full blur-[100px] pointer-events-none -z-10" />
 
-        {/* Decorative Blobs */}
-        <div className="absolute top-20 right-0 w-96 h-96 bg-primary-light/10 rounded-full blur-[100px] pointer-events-none -z-10 animate-pulse-soft" />
-        <div className="absolute bottom-0 left-[-10%] w-80 h-80 bg-accent-light/10 rounded-full blur-[80px] pointer-events-none -z-10 animate-pulse-soft" style={{ animationDelay: '2s' }} />
-
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-8 items-center">
           
-          {/* Hero Content (Left Text, Center Bottom Buttons) */}
-          <div className="lg:col-span-12 z-10 flex flex-col min-h-[50vh]">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="flex flex-col h-full flex-1">
+          {/* Hero Content (Left) */}
+          <div className="z-10 flex flex-col text-center lg:text-left items-center lg:items-start">
+            <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }} className="w-full">
               
-              <div className="text-left max-w-3xl pt-10">
-                <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-full px-4 py-1.5 mb-6 shadow-sm">
-                  <span className="flex h-2 w-2 rounded-full bg-accent animate-pulse"></span>
-                  <span className="text-xs font-semibold text-white uppercase tracking-wider">AI-Powered Interview Prep</span>
-                </div>
-                
-                <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.1] tracking-tight text-white mb-6">
-                  Master Your <span className="text-orange-500">Interviews</span>
-                </h1>
-                
-                <p className="text-lg lg:text-xl text-white/90 leading-relaxed max-w-2xl">
-                  AI-driven mock sessions. Smart resume matching. Your dream job awaits.
-                </p>
+              <div className="inline-flex items-center space-x-2 bg-bg-elevated border border-border-subtle rounded-full px-4 py-1.5 mb-8 shadow-sm">
+                <span className="flex h-2 w-2 rounded-full bg-accent-glow animate-pulse"></span>
+                <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">InterviewAce 2.0 is live</span>
               </div>
               
-              <div className="mt-auto pt-24 flex flex-col items-center justify-center w-full">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
-                  <Link to="/register" className="w-full sm:w-auto bg-white text-gray-900 px-8 py-3.5 rounded-full font-bold text-base hover:bg-gray-100 shadow-xl shadow-black/10 hover-lift text-center flex items-center justify-center transition-all">
-                    Start Free Trial <FiArrowRight className="ml-2" />
+              <h1 className="text-[40px] leading-[1.1] sm:text-5xl md:text-6xl lg:text-7xl font-bold font-display tracking-[-0.03em] text-text-primary mb-6">
+                Master the art of <br className="hidden sm:block" />
+                <span className="text-gradient">the interview.</span>
+              </h1>
+              
+              <p className="text-lg text-text-secondary leading-[1.6] max-w-xl mx-auto lg:mx-0 mb-10">
+                Practice with hyper-realistic AI, get instant actionable feedback, and walk into your next interview with absolute confidence.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto justify-center lg:justify-start">
+                <MagneticButton strength={30}>
+                  <Link to="/register" className="w-full sm:w-auto bg-accent-primary text-white px-8 py-3.5 rounded-full font-semibold text-base hover:bg-accent-glow shadow-[0_0_20px_rgba(108,92,231,0.4)] hover:shadow-[0_0_30px_rgba(108,92,231,0.6)] hover-scale text-center transition-all flex items-center justify-center">
+                    Start Free Interview
                   </Link>
-                </div>
+                </MagneticButton>
+                <MagneticButton strength={20}>
+                  <button onClick={() => scrollToSection('how-it-works')} className="w-full sm:w-auto bg-transparent border border-border-subtle text-text-primary px-8 py-3.5 rounded-full font-medium text-base hover:bg-bg-elevated text-center transition-all flex items-center justify-center gap-2">
+                    <FiVideo size={18} /> Watch demo
+                  </button>
+                </MagneticButton>
               </div>
 
             </motion.div>
           </div>
 
-          {/* Right Visuals Removed as requested */}
+          {/* Right Visual - Mock Interview Demo */}
+          <div className="z-10 w-full">
+            <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}>
+               <HeroMockInterview />
+            </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* ─── 3. Social Proof Bar ─── */}
-      <section className="py-8 bg-surface border-y border-border-light overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 mb-6 text-center">
-          <p className="text-sm font-medium text-text-muted uppercase tracking-widest">Trusted by professionals preparing for top companies</p>
+      {/* ─── 3. Social Proof / Tech Stack ─── */}
+      <section className="py-10 bg-bg-canvas border-y border-border-subtle overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 mb-8 text-center">
+          <p className="text-xs font-mono text-text-secondary uppercase tracking-widest">Powered by modern web technologies</p>
         </div>
         <div className="relative w-full flex overflow-x-hidden">
-          {/* We use a single w-max container with two sets to correctly translate -50% */}
-          <div className="flex w-max animate-scroll-logos opacity-60">
-            {['Google', 'Microsoft', 'Amazon', 'Meta', 'Apple', 'Netflix', 'Spotify', 'Airbnb', 'Uber', 'Stripe'].map((company, i) => (
-              <span key={i} className="text-2xl font-bold text-text-secondary mx-12 font-display shrink-0">{company}</span>
+          <div className="flex w-max animate-scroll-logos opacity-50 items-center">
+            {['React', 'Gemini AI', 'MongoDB', 'Express', 'Clerk Auth', 'Socket.io', 'Tailwind CSS', 'Vite'].map((tech, i) => (
+              <span key={i} className="text-xl font-bold text-text-secondary mx-12 font-display shrink-0 flex items-center gap-2">
+                <FiCheckCircle className="text-accent-primary" /> {tech}
+              </span>
             ))}
-            {['Google', 'Microsoft', 'Amazon', 'Meta', 'Apple', 'Netflix', 'Spotify', 'Airbnb', 'Uber', 'Stripe'].map((company, i) => (
-              <span key={`dup-${i}`} className="text-2xl font-bold text-text-secondary mx-12 font-display shrink-0">{company}</span>
+            {['React', 'Gemini AI', 'MongoDB', 'Express', 'Clerk Auth', 'Socket.io', 'Tailwind CSS', 'Vite'].map((tech, i) => (
+              <span key={`dup-${i}`} className="text-xl font-bold text-text-secondary mx-12 font-display shrink-0 flex items-center gap-2">
+                <FiCheckCircle className="text-accent-primary" /> {tech}
+              </span>
             ))}
           </div>
-          {/* Gradient masks for fading edges */}
-          <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-surface to-transparent pointer-events-none"></div>
-          <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-surface to-transparent pointer-events-none"></div>
+          <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-bg-canvas to-transparent pointer-events-none"></div>
+          <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-bg-canvas to-transparent pointer-events-none"></div>
         </div>
       </section>
 
-      {/* ─── 4. Features Grid ─── */}
-      <section id="features" className="section-padding bg-background relative">
+      {/* ─── 4. The Problem ─── */}
+      <section id="features" className="py-24 bg-bg-surface relative">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold font-display text-text-primary mb-4">
-              Everything You Need to Ace Your Interview
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold font-display text-text-primary mb-4">
+              Traditional prep is broken.
             </h2>
-            <p className="text-lg text-text-secondary">
-              A complete toolkit designed to build your confidence and sharpen your skills.
+            <p className="text-text-secondary">
+              Reading static lists of questions doesn't prepare you for the pressure of a real interview.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <FeatureCard 
-              bg="bg-[#a6c1d1]" 
-              title="Job Analysis"
-              description="AI analyzes job requirements, extracts key skills, and creates personalized prep roadmaps."
-              tags={["Role Analysis", "Skill Extraction", "Roadmap"]}
-            />
-            {/* Feature 2 */}
-            <FeatureCard 
-              bg="bg-[#d8b598]" 
-              title="MCQ Generator"
-              description="Auto-generate role-specific MCQs with varying difficulty levels and detailed explanations."
-              tags={["Dynamic MCQs", "Explanations"]}
-            />
-            {/* Feature 3 */}
-            <FeatureCard 
-              bg="bg-[#9f94b1]" 
-              title="Questions Bank"
-              description="Get curated interview questions with ideal answers, key points to cover, and common mistakes."
-              tags={["Curated Questions", "Ideal Answers"]}
-            />
-            {/* Feature 4 */}
-            <FeatureCard 
-              bg="bg-[#9bb8a8]" 
-              title="Mock Interviews"
-              description="Practice with our AI interviewer that evaluates your responses in real-time with actionable feedback."
-              tags={["Real-time Feedback", "AI Interviwer"]}
-            />
-            {/* Feature 5 */}
-            <FeatureCard 
-              bg="bg-[#f0c8c6]" 
-              title="Resume Analyzer"
-              description="Match your resume against job descriptions to find gaps, missing skills, and improvement areas."
-              tags={["Resume Matching", "Gap Analysis"]}
-            />
-            {/* Feature 6 */}
-            <FeatureCard 
-              bg="bg-[#d1c8b0]" 
-              title="Performance Dashboard"
-              description="Track your progress with detailed analytics, topic strength charts, and readiness scores."
-              tags={["Analytics", "Readiness Score"]}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
+              <TiltCard className="bg-bg-elevated border border-border-subtle p-10 rounded-[32px] flex flex-col items-center text-center gap-4 h-full shadow-md">
+                <div className="w-16 h-16 bg-bg-surface border border-border-subtle rounded-2xl flex items-center justify-center text-accent-glow mb-4">
+                  <FiFileText size={28} />
+                </div>
+                <p className="text-text-primary font-medium text-xl">Generic advice ignores your resume</p>
+                <p className="text-text-secondary mt-2">Static lists won't help when they ask you to dive deep into a specific project on your CV.</p>
+              </TiltCard>
+            </motion.div>
+            
+            <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ delay: 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
+              <TiltCard className="bg-bg-elevated border border-border-subtle p-10 rounded-[32px] flex flex-col items-center text-center gap-4 h-full shadow-md">
+                <div className="w-16 h-16 bg-bg-surface border border-border-subtle rounded-2xl flex items-center justify-center text-accent-glow mb-4">
+                  <FiMessageSquare size={28} />
+                </div>
+                <p className="text-text-primary font-medium text-xl">No real-time feedback on delivery</p>
+                <p className="text-text-secondary mt-2">Practicing alone in the mirror doesn't tell you if you sound confident or if you're rambling.</p>
+              </TiltCard>
+            </motion.div>
+            
+            <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
+              <TiltCard className="bg-bg-elevated border border-border-subtle p-10 rounded-[32px] flex flex-col items-center text-center gap-4 h-full shadow-md">
+                <div className="w-16 h-16 bg-bg-surface border border-border-subtle rounded-2xl flex items-center justify-center text-accent-glow mb-4">
+                  <FiTrendingUp size={28} />
+                </div>
+                <p className="text-text-primary font-medium text-xl">Hard to track actual improvement</p>
+                <p className="text-text-secondary mt-2">Without measurable metrics, it's impossible to know if you're actually getting better at interviewing.</p>
+              </TiltCard>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* ─── 5. Stats Counter Section ─── */}
-      <section className="py-20 bg-gradient-stats relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
-        
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-white/10">
-            <StatItem value={10000} suffix="+" label="Users Joined" />
-            <StatItem value={50000} suffix="+" label="Questions Generated" />
-            <StatItem value={95} suffix="%" label="Success Rate" />
-            <StatItem value={250} suffix="+" label="Job Roles Covered" />
-          </div>
-        </div>
-      </section>
-
-      {/* ─── 6. How It Works ─── */}
-      <section id="how-it-works" className="section-padding bg-surface-alt border-y border-border-light">
+      {/* ─── 5. How It Works (Alternating) ─── */}
+      <section id="how-it-works" className="py-24 bg-bg-canvas relative border-y border-border-subtle overflow-hidden" ref={howItWorksRef}>
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold font-display text-text-primary mb-4">
-              Get Interview-Ready in 3 Simple Steps
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <h2 className="text-3xl md:text-5xl font-bold font-display text-text-primary mb-4">
+              How InterviewAce works
             </h2>
-            <p className="text-lg text-text-secondary">
-              Our streamlined process takes you from unprepared to confident.
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
-            {/* Dashed line connecting steps (desktop only) */}
-            <div className="hidden md:block absolute top-1/2 left-[10%] right-[10%] h-0.5 border-t-2 border-dashed border-gray-300 -translate-y-1/2 z-0"></div>
+          <div className="space-y-32 relative">
+            
+            {/* GSAP Native Light Trail SVG */}
+            <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
+              <svg id="trail-svg" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="track-grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--border-subtle)" stopOpacity="0.1" />
+                    <stop offset="20%" stopColor="var(--border-subtle)" stopOpacity="0.4" />
+                    <stop offset="80%" stopColor="var(--border-subtle)" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="var(--border-subtle)" stopOpacity="0.1" />
+                  </linearGradient>
+                </defs>
+                
+                {/* Track */}
+                <path id="track-path" stroke="url(#track-grad)" strokeWidth="2" d="M0 0" />
+                
+                {/* Bright Line */}
+                <path id="bright-path" stroke="var(--accent-primary)" strokeWidth="2" d="M0 0" />
+                
+                {/* Comet Head */}
+                <circle id="comet-dot" r="6" fill="white" style={{ opacity: 0, filter: 'drop-shadow(0 0 12px var(--accent-glow))' }} />
 
-            <StepCard 
-              number="01" 
-              title="Analyze" 
-              description="Upload your target job description and let our AI extract the key requirements and skills."
-            />
-            <StepCard 
-              number="02" 
-              title="Practice" 
-              description="Take tailored MCQ tests and practice with our realistic AI mock interviewer to hone your answers."
-            />
-            <StepCard 
-              number="03" 
-              title="Excel" 
-              description="Track your progress, identify weak areas, and improve continuously until you're ready to ace it."
-            />
+                {/* Nodes */}
+                {[0, 1, 2].map(i => (
+                  <g key={i} className="trail-node">
+                    <circle r="12" stroke="var(--border-subtle)" strokeWidth="1" fill="var(--bg-surface)" />
+                    <circle className="inner-glow" r="5" fill="var(--accent-primary)" style={{ transformOrigin: 'center', scale: 0, opacity: 0, filter: 'drop-shadow(0 0 8px var(--accent-glow))' }} />
+                  </g>
+                ))}
+              </svg>
+            </div>
+
+            {/* Row 1 */}
+            <div className="gsap-row relative z-10 flex flex-col md:flex-row items-center gap-12 lg:gap-24">
+              <div className="gsap-text flex-1 space-y-6 md:sticky md:top-32">
+                <div className="w-12 h-12 bg-accent-primary/10 text-accent-glow rounded-xl flex items-center justify-center font-mono font-bold text-xl">1</div>
+                <h3 className="text-2xl md:text-3xl font-bold font-display text-text-primary">Resume-Aware Question Generation</h3>
+                <p className="text-text-secondary text-lg leading-relaxed">
+                  Upload your resume and the target job description. Our AI analyzes the overlap, identifies gaps, and generates highly specific questions tailored just for you.
+                </p>
+              </div>
+              <div className="gsap-img flex-1 w-full bg-bg-surface border border-border-subtle rounded-[32px] p-8 min-h-[300px] flex items-center justify-center shadow-md">
+                 <div className="w-full max-w-sm space-y-4">
+                   <div className="h-4 w-3/4 bg-border-subtle rounded-full animate-pulse"></div>
+                   <div className="h-4 w-full bg-border-subtle rounded-full animate-pulse delay-75"></div>
+                   <div className="h-4 w-5/6 bg-border-subtle rounded-full animate-pulse delay-150"></div>
+                   <div className="mt-8 p-4 border border-accent-primary/30 bg-accent-primary/5 rounded-xl border-dashed">
+                     <span className="text-accent-glow text-sm font-medium flex items-center gap-2"><FiCheckCircle /> Match found: React + Node.js</span>
+                   </div>
+                 </div>
+              </div>
+            </div>
+
+            {/* Row 2 */}
+            <div className="gsap-row relative z-10 flex flex-col md:flex-row-reverse items-center gap-12 lg:gap-24">
+              <div className="gsap-text flex-1 space-y-6 md:sticky md:top-32">
+                <div className="w-12 h-12 bg-accent-primary/10 text-accent-glow rounded-xl flex items-center justify-center font-mono font-bold text-xl">2</div>
+                <h3 className="text-2xl md:text-3xl font-bold font-display text-text-primary">Real-Time Mock Interview</h3>
+                <p className="text-text-secondary text-lg leading-relaxed">
+                  Engage in a back-and-forth conversation with our AI interviewer. It listens, adapts to your answers, and drills deeper just like a real hiring manager would.
+                </p>
+              </div>
+              <div className="gsap-img flex-1 w-full bg-bg-surface border border-border-subtle rounded-[32px] p-8 min-h-[300px] flex items-center justify-center shadow-md relative overflow-hidden">
+                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-accent-primary/10 via-bg-surface to-bg-surface"></div>
+                 <div className="relative flex flex-col gap-4 w-full max-w-sm">
+                    <div className="bg-bg-elevated p-4 rounded-2xl rounded-tl-none border border-border-subtle w-4/5">Tell me about a time you failed.</div>
+                    <div className="bg-accent-primary text-white p-4 rounded-2xl rounded-tr-none self-end w-4/5 shadow-glow">I once miscalculated a database migration...</div>
+                 </div>
+              </div>
+            </div>
+
+            {/* Row 3 */}
+            <div className="gsap-row relative z-10 flex flex-col md:flex-row items-center gap-12 lg:gap-24">
+              <div className="gsap-text flex-1 space-y-6 md:sticky md:top-32">
+                <div className="w-12 h-12 bg-accent-primary/10 text-accent-glow rounded-xl flex items-center justify-center font-mono font-bold text-xl">3</div>
+                <h3 className="text-2xl md:text-3xl font-bold font-display text-text-primary">Instant Structured Feedback</h3>
+                <p className="text-text-secondary text-lg leading-relaxed">
+                  After every session, receive a detailed breakdown of your performance, including metrics on clarity, conciseness, and technical accuracy, along with suggestions for improvement.
+                </p>
+              </div>
+              <div className="gsap-img flex-1 w-full bg-bg-surface border border-border-subtle rounded-[32px] p-8 min-h-[300px] flex items-center justify-center shadow-md">
+                 <div className="w-full max-w-sm space-y-4">
+                    <div className="flex justify-between items-center mb-6">
+                      <span className="font-semibold text-text-primary">Overall Score</span>
+                      <span className="text-3xl font-bold text-success">85%</span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm"><span className="text-text-secondary">Clarity</span><span className="text-text-primary">90%</span></div>
+                      <div className="h-2 w-full bg-bg-elevated rounded-full overflow-hidden"><div className="h-full bg-success w-[90%]"></div></div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm"><span className="text-text-secondary">Technical Depth</span><span className="text-text-primary">75%</span></div>
+                      <div className="h-2 w-full bg-bg-elevated rounded-full overflow-hidden"><div className="h-full bg-warning w-[75%]"></div></div>
+                    </div>
+                 </div>
+              </div>
+            </div>
           </div>
+        </div>
+      </section>
+
+      {/* ─── Tech Architecture ─── */}
+      <section className="py-24 bg-bg-surface border-y border-border-subtle overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div 
+            variants={getMechanicalContainer()}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            className="text-center max-w-3xl mx-auto mb-16"
+          >
+            <motion.h2 variants={getMechanicalItem()} className="text-3xl md:text-5xl font-bold font-display text-text-primary mb-4">
+              Built for Speed and Scale
+            </motion.h2>
+            <motion.p variants={getMechanicalItem()} className="text-lg text-text-secondary">
+              A modern, real-time architecture powering your interview experience.
+            </motion.p>
+            
+            <motion.div variants={getMechanicalItem()} className="flex justify-center gap-12 mt-12 mb-8">
+              <div className="flex flex-col items-center">
+                <span className="text-4xl font-bold text-accent-glow font-mono"><AnimatedNumber end={30} duration={800} suffix="ms" /></span>
+                <span className="text-sm text-text-secondary mt-1 uppercase tracking-wider">Average Latency</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-4xl font-bold text-accent-glow font-mono"><AnimatedNumber end={99} duration={1000} suffix=".9%" /></span>
+                <span className="text-sm text-text-secondary mt-1 uppercase tracking-wider">Uptime</span>
+              </div>
+            </motion.div>
+          </motion.div>
+          
+          <motion.div
+            variants={getMechanicalContainer()}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+          >
+            <motion.div variants={getMechanicalItem()}>
+              <TechArchitecture />
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
       {/* ─── 7. Testimonials ─── */}
-      <section id="testimonials" className="section-padding bg-background">
-        <div className="max-w-7xl mx-auto px-6">
+      <section id="testimonials" className="py-24 bg-bg-canvas">
+        <motion.div 
+          className="max-w-7xl mx-auto px-6"
+          variants={getWarmContainer()}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold font-display text-text-primary mb-4">
-              What Our Users Say
-            </h2>
-            <p className="text-lg text-text-secondary">
-              Don't just take our word for it. Here's how InterviewAce has helped professionals land their dream jobs.
-            </p>
+            <motion.h2 variants={getWarmItem()} className="text-3xl md:text-5xl font-bold font-display text-text-primary mb-4">
+              Trusted by successful candidates
+            </motion.h2>
+            <motion.p variants={getWarmItem()} className="text-lg text-text-secondary">
+              See how InterviewAce helped professionals land their dream jobs.
+            </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <TestimonialCard 
-              quote="The AI mock interviews were incredibly realistic. The feedback on my communication style helped me fix issues I didn't even know I had. Landed a senior dev role at a FAANG company!"
-              name="Sarah Jenkins"
-              role="Senior Frontend Developer"
-              initials="SJ"
-              color="bg-blue-100 text-blue-700"
-            />
-            <TestimonialCard 
-              quote="I was struggling to tailor my prep for specific roles. The Job Description Analyzer broke down exactly what I needed to study. The 4-week roadmap was a game-changer."
-              name="Michael Chen"
-              role="Product Manager"
-              initials="MC"
-              color="bg-emerald-100 text-emerald-700"
-            />
-            <TestimonialCard 
-              quote="As a recent grad, interviews terrified me. Practicing with InterviewAce built my confidence immensely. The curated question bank was spot-on for what I was actually asked."
-              name="Emily Rodriguez"
-              role="Data Analyst"
-              initials="ER"
-              color="bg-purple-100 text-purple-700"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <motion.div variants={getWarmItem()}>
+              <TestimonialCard 
+                quote="The AI mock interviews were incredibly realistic. The feedback on my communication style helped me fix issues I didn't even know I had. Landed a senior dev role at a FAANG company!"
+                name="Sarah Jenkins"
+                role="Senior Frontend Developer"
+                initials="SJ"
+                color="bg-accent-primary/20 text-accent-glow"
+              />
+            </motion.div>
+            <motion.div variants={getWarmItem()}>
+              <TestimonialCard 
+                quote="I was struggling to tailor my prep for specific roles. The Job Description Analyzer broke down exactly what I needed to study. The 4-week roadmap was a game-changer."
+                name="Michael Chen"
+                role="Product Manager"
+                initials="MC"
+                color="bg-success/20 text-success"
+              />
+            </motion.div>
+            <motion.div variants={getWarmItem()}>
+              <TestimonialCard 
+                quote="As a recent grad, interviews terrified me. Practicing with InterviewAce built my confidence immensely. The curated question bank was spot-on for what I was actually asked."
+                name="Emily Rodriguez"
+                role="Data Analyst"
+                initials="ER"
+                color="bg-warning/20 text-warning"
+              />
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
-      {/* ─── 8. CTA Section ─── */}
-      <section className="py-24 bg-gradient-primary relative overflow-hidden">
-        {/* Abstract shapes */}
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+      {/* ─── 8. Final CTA Band ─── */}
+      <section className="py-24 bg-bg-surface relative overflow-hidden border-y border-border-subtle">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-accent-primary/20 via-bg-surface to-bg-surface"></div>
         
-        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-          <h2 className="text-4xl md:text-5xl font-bold font-display text-white mb-6">
-            Ready to Ace Your Next Interview?
-          </h2>
-          <p className="text-xl text-indigo-100 mb-10 max-w-2xl mx-auto">
-            Join thousands of professionals who have already transformed their interview preparation and landed their dream roles.
-          </p>
+        <motion.div 
+          className="max-w-4xl mx-auto px-6 text-center relative z-10"
+          variants={getDecisiveContainer()}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
+          <motion.h2 variants={getDecisiveItem()} className="text-4xl md:text-6xl font-bold font-display text-text-primary mb-6 tracking-tight">
+            Ready to ace your next interview?
+          </motion.h2>
+          <motion.p variants={getDecisiveItem()} className="text-xl text-text-secondary mb-10 max-w-2xl mx-auto">
+            Join thousands of professionals who have transformed their interview preparation and landed their dream roles.
+          </motion.p>
           
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link to="/register" className="w-full sm:w-auto bg-white text-primary px-10 py-4 rounded-xl font-bold text-lg hover:bg-gray-50 shadow-xl hover-lift transition-all">
-              Start Free Today
+          <motion.div variants={getDecisiveButton()} className="flex justify-center relative inline-block">
+            {/* Ambient CTA Glow */}
+            {!shouldReduceMotion && (
+               <motion.div 
+                 className="absolute inset-0 bg-accent-glow rounded-full blur-xl z-0" 
+                 initial={{ opacity: 0 }}
+                 whileInView={{ opacity: 0.15 }}
+                 viewport={{ once: true, amount: 0.2 }}
+                 transition={{ delay: 0.2, duration: 0.3 }}
+               />
+            )}
+            <Link to="/register" className="relative z-10 bg-text-primary text-bg-canvas px-10 py-4 rounded-full font-bold text-lg hover:opacity-90 shadow-[0_0_20px_rgba(255,255,255,0.2)] hover-lift transition-all inline-block">
+              Start Free Interview
             </Link>
-          </div>
-          <p className="text-sm text-indigo-200 mt-6">
-            No credit card required. Free plan available.
-          </p>
-        </div>
+          </motion.div>
+        </motion.div>
       </section>
+
+      {/* ─── Mobile Bottom CTA Bar ─── */}
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 p-4 bg-bg-surface/90 backdrop-blur-lg border-t border-border-subtle z-50 transition-transform duration-300 ${scrolled ? 'translate-y-0' : 'translate-y-full'}`}>
+        <Link to="/register" className="block w-full bg-accent-primary text-white text-center py-3.5 rounded-full font-semibold shadow-glow">
+          Start Free Interview
+        </Link>
+      </div>
 
       {/* ─── 9. Footer ─── */}
-      <footer className="bg-gray-900 pt-20 pb-10 text-gray-400">
+      <motion.footer 
+        className="bg-bg-surface pt-14 md:pt-24 border-t border-border-subtle"
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
+        transition={{ duration: shouldReduceMotion ? 0.15 : 0.4, ease: [0.16, 1, 0.3, 1] }}
+      >
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+            
             {/* Brand Column */}
-            <div className="col-span-1 lg:col-span-1">
-              <Link to="/" className="flex items-center space-x-2 mb-6">
-
-                <span className="text-xl font-bold tracking-tight text-white font-display">
+            <div className="flex flex-col">
+              <Link to="/" className="flex items-center space-x-2 mb-4 p-2 -ml-2 rounded-lg hover:bg-bg-elevated transition-colors w-fit">
+                <span className="text-xl font-bold tracking-tight text-text-primary font-display">
                   InterviewAce
                 </span>
               </Link>
-              <p className="text-sm mb-6 max-w-xs">
-                The ultimate AI-powered platform for interview preparation. Build confidence, practice effectively, and land your dream job.
+              <p className="text-sm text-text-secondary mb-6 max-w-sm leading-relaxed">
+                The ultimate AI-powered platform for interview preparation. Build confidence and land your dream job.
               </p>
+              <div className="flex space-x-4">
+                <a href="#" className="p-3 -ml-3 text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 rounded-lg">
+                  <FiGithub size={20} />
+                </a>
+                <a href="#" className="p-3 text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 rounded-lg">
+                  <FiLinkedin size={20} />
+                </a>
+              </div>
             </div>
 
             {/* Product Column */}
-            <div>
-              <h4 className="text-white font-semibold mb-6 uppercase tracking-wider text-sm">Product</h4>
-              <ul className="space-y-4 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Job Analysis</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Mock Interviews</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">MCQ Generator</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Resume Analyzer</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
+            <div className="flex flex-col">
+              <h4 className="text-text-secondary font-mono text-sm tracking-wider uppercase mb-6">Product</h4>
+              <ul className="space-y-4">
+                <li><a href="#how-it-works" className="text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 inline-block py-1">How it works</a></li>
+                <li><Link to="/register" className="text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 inline-block py-1">Start Free Interview</Link></li>
               </ul>
             </div>
 
             {/* Resources Column */}
-            <div>
-              <h4 className="text-white font-semibold mb-6 uppercase tracking-wider text-sm">Resources</h4>
-              <ul className="space-y-4 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Interview Guides</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Success Stories</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">FAQ</a></li>
+            <div className="flex flex-col">
+              <h4 className="text-text-secondary font-mono text-sm tracking-wider uppercase mb-6">Developer</h4>
+              <ul className="space-y-4">
+                <li><a href="#" className="text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 inline-block py-1">GitHub Repository</a></li>
+                <li>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <span className="px-2 py-1 bg-bg-canvas border border-border-subtle rounded text-xs text-text-secondary font-mono">React</span>
+                    <span className="px-2 py-1 bg-bg-canvas border border-border-subtle rounded text-xs text-text-secondary font-mono">Express</span>
+                    <span className="px-2 py-1 bg-bg-canvas border border-border-subtle rounded text-xs text-text-secondary font-mono">MongoDB</span>
+                    <span className="px-2 py-1 bg-bg-canvas border border-border-subtle rounded text-xs text-text-secondary font-mono">Gemini</span>
+                  </div>
+                </li>
               </ul>
             </div>
 
-            {/* Legal Column */}
-            <div>
-              <h4 className="text-white font-semibold mb-6 uppercase tracking-wider text-sm">Legal</h4>
-              <ul className="space-y-4 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Cookie Policy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
-              </ul>
-            </div>
           </div>
 
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm">© {new Date().getFullYear()} InterviewAce. All rights reserved.</p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              {/* Social placeholders */}
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
-                </svg>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                </svg>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-                </svg>
-              </a>
-            </div>
+          {/* Bottom Bar */}
+          <div className="border-t border-border-subtle py-6 md:py-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <p className="text-sm text-text-secondary">© {new Date().getFullYear()} InterviewAce. All rights reserved.</p>
+            <p className="text-[12px] text-text-secondary font-mono">
+              Built with React, Express, MongoDB & Gemini
+            </p>
           </div>
         </div>
-      </footer>
-
+      </motion.footer>
     </div>
+    </>
   );
 };
 
 // ─── Reusable Micro-components ───
 
-const FeatureCard = ({ bg, title, description, tags }) => {
-  const [ref, isVisible] = useScrollReveal();
+const TechArchitecture = () => {
+  const [activeNode, setActiveNode] = useState(null);
   
-  return (
-    <div 
-      ref={ref}
-      className={`rounded-[24px] p-8 flex flex-col h-full hover-lift shadow-sm ${bg} ${isVisible ? 'animate-slide-up' : 'opacity-0'} min-h-[320px]`}
-    >
-      <h3 className="text-[28px] font-bold font-display text-gray-900 mb-3 tracking-tight leading-tight">{title}</h3>
-      <p className="text-gray-800 text-base leading-relaxed mb-6 font-medium opacity-90">{description}</p>
-      
-      {tags && tags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-8">
-          {tags.map((tag, i) => (
-            <span key={i} className="px-3.5 py-1.5 rounded-full text-[13px] font-semibold bg-black/5 text-gray-800">
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
-      
-      <div className="mt-auto flex items-center justify-between pt-2">
-        <span className="font-bold text-gray-900 text-[17px]">Explore</span>
-        <div className="w-10 h-10 rounded-[10px] bg-black/5 flex items-center justify-center text-gray-900 hover:bg-black/10 transition-colors">
-          <FiArrowRight size={20} />
-        </div>
-      </div>
-    </div>
-  );
-};
+  // Custom layout for mobile vs desktop could be complex, we'll use a responsive flex approach
+  // instead of fixed absolute positioning for better responsiveness.
+  const nodes = [
+    { id: 'client', label: 'React Client', desc: 'Vite + Tailwind' },
+    { id: 'api', label: 'Express 5 API', desc: 'Node.js Backend' },
+    { id: 'ai', label: 'Gemini AI', desc: 'LLM Engine' },
+    { id: 'db', label: 'MongoDB', desc: 'Data Store' },
+    { id: 'auth', label: 'Clerk', desc: 'Authentication' },
+  ];
 
-const StatItem = ({ value, suffix, label }) => {
   return (
-    <div className="flex flex-col items-center justify-center py-4 px-2">
-      <div className="text-4xl md:text-5xl font-bold font-display text-white mb-2">
-        <AnimatedNumber end={value} suffix={suffix} />
+    <div className="relative w-full max-w-4xl mx-auto bg-bg-canvas border border-border-subtle rounded-3xl p-8 lg:p-16 shadow-lg overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0">
+      
+      {/* Client Node */}
+      <div 
+        onMouseEnter={() => setActiveNode('client')} onMouseLeave={() => setActiveNode(null)}
+        className={`relative z-10 w-full md:w-auto text-center px-6 py-4 rounded-2xl border transition-all duration-300 ${activeNode === 'client' || activeNode === null ? 'bg-bg-elevated border-accent-primary shadow-glow scale-105' : 'bg-bg-surface border-border-subtle opacity-50 scale-100'}`}
+      >
+        <div className="font-bold text-text-primary">{nodes[0].label}</div>
+        <div className="text-xs text-text-secondary mt-1 font-mono">{nodes[0].desc}</div>
       </div>
-      <div className="text-indigo-200 font-medium">{label}</div>
-    </div>
-  );
-};
 
-const StepCard = ({ number, title, description }) => {
-  const [ref, isVisible] = useScrollReveal();
-  
-  return (
-    <div 
-      ref={ref}
-      className={`relative z-10 flex flex-col items-center text-center ${isVisible ? 'animate-fade-rise' : 'opacity-0'}`}
-    >
-      <div className="w-16 h-16 rounded-full bg-white border-4 border-indigo-100 flex items-center justify-center text-primary font-bold text-xl shadow-md mb-6 z-10">
-        {number}
+      {/* Connection 1 */}
+      <div className="hidden md:block flex-1 h-px bg-border-subtle relative">
+         <div className={`absolute inset-0 bg-accent-primary transition-all duration-500 origin-left ${activeNode === 'client' || activeNode === 'api' ? 'scale-x-100' : 'scale-x-0'}`}></div>
       </div>
-      <div className="bg-white rounded-2xl p-8 border border-border-light shadow-sm w-full hover-lift">
-        <h3 className="text-2xl font-bold font-display text-text-primary mb-4">{title}</h3>
-        <p className="text-text-secondary">{description}</p>
+
+      {/* API Node */}
+      <div 
+        onMouseEnter={() => setActiveNode('api')} onMouseLeave={() => setActiveNode(null)}
+        className={`relative z-10 w-full md:w-auto text-center px-6 py-4 rounded-2xl border transition-all duration-300 ${activeNode === 'api' || activeNode === null ? 'bg-bg-elevated border-accent-primary shadow-glow scale-105' : 'bg-bg-surface border-border-subtle opacity-50 scale-100'}`}
+      >
+        <div className="font-bold text-text-primary">{nodes[1].label}</div>
+        <div className="text-xs text-text-secondary mt-1 font-mono">{nodes[1].desc}</div>
       </div>
+
+      {/* Connections 2 (Fork) */}
+      <div className="hidden md:block w-16 h-48 border-y border-r border-border-subtle rounded-r-3xl relative ml-[-1px]">
+         {/* Top fork to AI */}
+         <div className={`absolute top-[-1px] left-0 w-full h-px bg-accent-primary transition-all duration-500 origin-left ${activeNode === 'api' || activeNode === 'ai' ? 'scale-x-100' : 'scale-x-0'}`}></div>
+         {/* Bottom fork to Auth/DB */}
+         <div className={`absolute bottom-[-1px] left-0 w-full h-px bg-accent-primary transition-all duration-500 origin-left ${activeNode === 'api' || activeNode === 'db' || activeNode === 'auth' ? 'scale-x-100' : 'scale-x-0'}`}></div>
+      </div>
+
+      {/* Services Stack */}
+      <div className="flex flex-col gap-4 w-full md:w-auto ml-0 md:ml-4">
+        {nodes.slice(2).map(node => (
+          <div 
+            key={node.id}
+            onMouseEnter={() => setActiveNode(node.id)} onMouseLeave={() => setActiveNode(null)}
+            className={`relative z-10 text-center px-6 py-4 rounded-2xl border transition-all duration-300 ${activeNode === node.id || activeNode === null ? 'bg-bg-elevated border-accent-primary shadow-glow scale-105' : 'bg-bg-surface border-border-subtle opacity-50 scale-100'}`}
+          >
+            <div className="font-bold text-text-primary">{node.label}</div>
+            <div className="text-xs text-text-secondary mt-1 font-mono">{node.desc}</div>
+          </div>
+        ))}
+      </div>
+
     </div>
   );
 };
 
 const TestimonialCard = ({ quote, name, role, initials, color }) => {
-  const [ref, isVisible] = useScrollReveal();
-  
   return (
-    <div 
-      ref={ref}
-      className={`bg-white rounded-2xl p-8 border border-border-light shadow-sm flex flex-col h-full hover-lift ${isVisible ? 'animate-slide-up' : 'opacity-0'}`}
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className="bg-bg-elevated rounded-3xl p-8 border border-border-subtle shadow-sm flex flex-col h-full hover-lift"
     >
-      <div className="flex text-amber-400 mb-6">
+      <div className="flex text-accent-glow mb-6">
         {[1, 2, 3, 4, 5].map(i => (
-          <svg key={i} className="w-5 h-5 fill-current" viewBox="0 0 20 20">
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-          </svg>
+          <FiCheckCircle key={i} size={16} className="mr-1 fill-accent-primary/20" />
         ))}
       </div>
-      <p className="text-text-secondary text-lg mb-8 italic flex-1">"{quote}"</p>
+      <p className="text-text-secondary text-lg mb-8 italic flex-1 leading-relaxed">"{quote}"</p>
       <div className="flex items-center gap-4 mt-auto">
         <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${color}`}>
           {initials}
         </div>
         <div>
           <h4 className="font-bold text-text-primary">{name}</h4>
-          <p className="text-sm text-text-muted">{role}</p>
+          <p className="text-sm text-text-secondary">{role}</p>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
