@@ -20,7 +20,9 @@ It's not just another generic quiz app; it's a personalized interview coach buil
 
 ## ✨ Key Features
 - **Smart Resume Parsing:** Upload a PDF resume; we extract the text and tailor the interview context to your actual experience.
-- **Dynamic AI Interviews:** Google's Gemini AI acts as the interviewer, providing relevant questions and grading your responses.
+- **Dynamic AI Interviews:** Google's Gemini 1.5 Flash acts as the interviewer, focusing on relevant technical questions and grading your responses with high efficiency.
+- **Ultra-Realistic Voice (TTS):** Integrated Deepgram Aura for natural, low-latency text-to-speech to simulate real interview conversations.
+- **Immersive Interview UI:** Full-screen live interview experience featuring auto voice recording and a streamlined chat interface.
 - **Enterprise-Grade Security:** Fully integrated with Clerk for secure, seamless authentication (both client and server-side verification).
 - **Performance Analytics:** Visual tracking of your interview scores over time using interactive Recharts.
 - **Polished UI/UX:** Built with React 19, Vite, and Tailwind CSS v4, featuring smooth micro-animations via Framer Motion.
@@ -35,7 +37,8 @@ InterviewAce uses a modern, strictly separated client/server architecture.
 | **State & Data** | React Query + Axios | Powerful server-state management with built-in caching, retry, and deduplication logic. |
 | **Backend** | Express.js 5 + Node.js | Fast, unopinionated server framework. Express 5 brings better native Promise handling. |
 | **Database** | MongoDB + Mongoose | Flexible NoSQL document structure, ideal for rapidly iterating on user profiles and interview sessions. |
-| **AI Engine** | Google Gemini (`@google/genai`) | State-of-the-art LLM capabilities with excellent context window for parsing long resumes and maintaining conversation state. |
+| **AI Engine** | Google Gemini 1.5 Flash (`@google/genai`) | State-of-the-art LLM capabilities with excellent context window for parsing long resumes and maintaining conversation state. |
+| **Voice & Speech** | Deepgram Aura | Ultra-realistic, low-latency Text-to-Speech API for seamless, real-time conversational experiences. |
 | **Auth & Security** | Clerk, Helmet, CORS, Rate Limit | Clerk handles complex auth flows securely; Helmet and express-rate-limit protect against common web vulnerabilities. |
 
 ## 🏁 Quick Start
