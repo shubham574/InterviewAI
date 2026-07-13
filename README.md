@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./client/public/landing-preview.png" alt="InterviewAce Dashboard Mockup" width="800" />
+  <img src="./client/public/landing-preview.png" alt="InterviewAce Landing Page Preview" width="800" />
 
   # InterviewAce
   **Your AI-Powered Technical Interview Companion**
