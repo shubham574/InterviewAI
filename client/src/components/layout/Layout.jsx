@@ -13,14 +13,14 @@ const Layout = () => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-bg-canvas">
+    <div className="flex min-h-screen bg-bg-canvas">
       {/* Sidebar for authenticated layout */}
       <Sidebar isOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       
-      <div className="flex flex-col flex-1 w-full overflow-hidden">
+      <div className="flex flex-col flex-1 w-full min-w-0">
         <Navbar toggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
         
-        <main className="flex-1 overflow-y-auto overflow-x-clip focus:outline-none scrollbar-thin relative bg-bg-canvas">
+        <main className="flex-1 focus:outline-none relative bg-bg-canvas">
           {/* Subtle background decoration */}
           <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-accent-primary/10 to-transparent pointer-events-none -z-10" />
           

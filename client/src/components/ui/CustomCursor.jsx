@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 
 const CustomCursor = () => {
+  const location = useLocation();
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const [isClicking, setIsClicking] = useState(false);
@@ -54,7 +56,7 @@ const CustomCursor = () => {
     };
   }, [isVisible]);
 
-  if (!isVisible) return null;
+  if (!isVisible || location.pathname !== '/') return null;
 
   return (
     <>
