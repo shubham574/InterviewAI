@@ -24,7 +24,7 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 animate-in fade-in duration-300">
+      <div className="space-y-8 animate-fade-in">
         <SEOHead title="Dashboard | Loading..." />
         <DashboardSkeleton />
       </div>
@@ -50,7 +50,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-8 animate-fade-in">
       <SEOHead title="Dashboard" />
       
       {/* ─── Action Hero ─── */}

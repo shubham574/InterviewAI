@@ -14,12 +14,12 @@ const Button = ({
   className = '',
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background hover:-translate-y-0.5 active:translate-y-0';
+  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-bg-canvas relative overflow-hidden group';
   
   const variants = {
-    primary: 'bg-gradient-primary text-white hover:opacity-95 focus:ring-accent-primary/30 shadow-lg shadow-accent-primary/25 hover:shadow-xl hover:shadow-accent-primary/30',
-    secondary: 'bg-bg-surface hover:bg-surface-hover text-text-primary border border-border-subtle shadow-sm hover:shadow-md',
-    danger: 'bg-danger text-white hover:bg-danger/90 shadow-lg shadow-danger/20 hover:shadow-xl hover:shadow-danger/30',
+    primary: 'bg-gradient-primary text-white hover:brightness-110 focus:ring-accent-primary shadow-[0_0_15px_rgba(79,70,229,0.3),0_0_30px_rgba(124,58,237,0.1)] hover:shadow-[0_0_20px_rgba(79,70,229,0.5),0_0_50px_rgba(124,58,237,0.3)]',
+    secondary: 'bg-bg-surface hover:bg-surface-hover text-text-primary border border-border-subtle shadow-sm hover:shadow-md hover:border-text-secondary/30',
+    danger: 'bg-danger text-white hover:bg-danger/90 shadow-[0_0_15px_rgba(220,38,38,0.3)] hover:shadow-[0_0_25px_rgba(220,38,38,0.5)]',
     ghost: 'hover:bg-surface-hover text-text-secondary hover:text-text-primary',
   };
 
@@ -37,10 +37,16 @@ const Button = ({
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
-      whileTap={!(disabled || loading) ? { scale: 0.98 } : {}}
+      whileHover={!(disabled || loading) ? { scale: 1.02 } : {}}
+      whileTap={!(disabled || loading) ? { scale: 0.97 } : {}}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${widthStyles} ${disabledStyles} ${className}`}
       {...props}
     >
+      {/* Dynamic Hover Glare inside primary buttons */}
+      {variant === 'primary' && !(disabled || loading) && (
+         <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/20 to-transparent" />
+      )}
       {loading ? (
         <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

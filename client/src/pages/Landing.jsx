@@ -266,10 +266,10 @@ const Landing = () => {
            });
         } else {
            const startX = w * 0.5;
-           // Align with text panels: Card 1 (Left), Card 2 (Right), Card 3 (Left)
-           const c1x = w * 0.25; const c1y = h * 0.16;
-           const c2x = w * 0.75; const c2y = h * 0.50;
-           const c3x = w * 0.25; const c3y = h * 0.83;
+           // Weave toward the images (Card 1: Right, Card 2: Left, Card 3: Right)
+           const c1x = w * 0.75; const c1y = h * 0.16;
+           const c2x = w * 0.25; const c2y = h * 0.50;
+           const c3x = w * 0.75; const c3y = h * 0.83;
            
            d = `M ${startX} 0 C ${startX} ${c1y * 0.5}, ${c1x} ${c1y * 0.5}, ${c1x} ${c1y} C ${c1x} ${c1y + (c2y - c1y) * 0.5}, ${c2x} ${c2y - (c2y - c1y) * 0.5}, ${c2x} ${c2y} C ${c2x} ${c2y + (c3y - c2y) * 0.5}, ${c3x} ${c3y - (c3y - c2y) * 0.5}, ${c3x} ${c3y} C ${c3x} ${h - (h - c3y) * 0.5}, ${startX} ${h - (h - c3y) * 0.5}, ${startX} ${h}`;
            
@@ -301,7 +301,7 @@ const Landing = () => {
         progress: 1,
         ease: 'none',
         scrollTrigger: {
-          trigger: '#how-it-works',
+          trigger: howItWorksRef.current,
           start: 'top 50%',
           end: 'bottom 50%',
           scrub: 1,
@@ -373,16 +373,9 @@ const Landing = () => {
           </nav>
 
           {/* Auth & Theme Buttons */}
-          <div className="flex items-center space-x-3 shrink-0">
-            <button 
-              onClick={toggleTheme} 
-              className="p-2 rounded-full hover:bg-bg-elevated transition-colors text-text-secondary hover:text-text-primary mr-1"
-              aria-label="Toggle theme"
-            >
-              {theme === 'light' ? <FiMoon size={18} /> : <FiSun size={18} />}
-            </button>
+          <div className="flex items-center gap-4 shrink-0">
             <SignedIn>
-              <Link to="/dashboard" className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors mr-2">
+              <Link to="/dashboard" className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors hidden sm:block">
                 Dashboard
               </Link>
               <UserButton afterSignOutUrl="/" />
@@ -395,6 +388,16 @@ const Landing = () => {
                 Start Free Interview
               </Link>
             </SignedOut>
+            
+            <div className="w-px h-5 bg-border-subtle hidden sm:block" />
+            
+            <button 
+              onClick={toggleTheme} 
+              className="p-2 rounded-full hover:bg-bg-elevated transition-colors text-text-secondary hover:text-text-primary flex items-center justify-center -ml-1 sm:ml-0"
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? <FiMoon size={18} /> : <FiSun size={18} />}
+            </button>
           </div>
         </div>
       </header>
@@ -544,10 +547,10 @@ const Landing = () => {
                 </defs>
                 
                 {/* Track */}
-                <path id="track-path" stroke="url(#track-grad)" strokeWidth="2" d="M0 0" />
+                <path id="track-path" stroke="url(#track-grad)" strokeWidth="3" d="M0 0" />
                 
-                {/* Bright Line */}
-                <path id="bright-path" stroke="var(--accent-primary)" strokeWidth="2" d="M0 0" />
+                {/* Bright Line with Drop Shadow for extra glow */}
+                <path id="bright-path" stroke="var(--accent-glow)" strokeWidth="4" filter="drop-shadow(0 0 16px var(--accent-primary))" style={{ strokeLinecap: 'round' }} d="M0 0" />
                 
                 {/* Comet Head */}
                 <circle id="comet-dot" r="6" fill="white" style={{ opacity: 0, filter: 'drop-shadow(0 0 12px var(--accent-glow))' }} />
@@ -788,10 +791,10 @@ const Landing = () => {
                 The ultimate AI-powered platform for interview preparation. Build confidence and land your dream job.
               </p>
               <div className="flex space-x-4">
-                <a href="#" className="p-3 -ml-3 text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 rounded-lg">
+                <a href="https://github.com/shubham574" target="_blank" rel="noopener noreferrer" className="p-3 -ml-3 text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 rounded-lg">
                   <FiGithub size={20} />
                 </a>
-                <a href="#" className="p-3 text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 rounded-lg">
+                <a href="https://www.linkedin.com/in/shubham-maurya-937511309/" target="_blank" rel="noopener noreferrer" className="p-3 text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 rounded-lg">
                   <FiLinkedin size={20} />
                 </a>
               </div>

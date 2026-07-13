@@ -11,7 +11,7 @@ const Input = forwardRef(({
   rows = 4,
   ...props
 }, ref) => {
-  const baseInputStyles = 'w-full bg-bg-surface border border-border-subtle rounded-xl text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary transition-all shadow-sm';
+  const baseInputStyles = 'w-full bg-bg-surface/50 backdrop-blur-md border border-border-subtle rounded-xl text-text-primary placeholder-text-muted focus:outline-none focus:bg-bg-canvas focus:border-accent-primary focus:ring-0 focus:shadow-[0_0_15px_rgba(79,70,229,0.2)] hover:border-text-secondary/30 transition-all duration-300 shadow-sm';
   const paddingStyles = Icon ? 'pl-10 pr-4 py-2' : 'px-4 py-2';
   const errorStyles = error ? 'border-danger focus:ring-danger/50 focus:border-danger' : '';
 

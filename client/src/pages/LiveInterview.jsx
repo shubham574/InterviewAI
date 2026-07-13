@@ -634,6 +634,7 @@ const LiveInterview = () => {
             </div>
             <div className="flex items-center gap-3">
               <button
+                aria-label={isMuted ? 'Unmute Shristi' : 'Mute Shristi'}
                 onClick={toggleMute}
                 className="flex items-center justify-center text-text-muted hover:text-text-primary transition-colors bg-surface-hover border border-border rounded-lg p-2"
                 title={isMuted ? 'Unmute Shristi' : 'Mute Shristi'}
@@ -641,6 +642,7 @@ const LiveInterview = () => {
                 {isMuted ? <FiVolumeX className="w-4 h-4" /> : <FiVolume2 className="w-4 h-4" />}
               </button>
               <button
+                aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
                 onClick={toggleFullscreen}
                 className="flex items-center justify-center text-text-muted hover:text-text-primary transition-colors bg-surface-hover border border-border rounded-lg p-2 hidden sm:flex"
                 title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
@@ -648,6 +650,7 @@ const LiveInterview = () => {
                 {isFullscreen ? <FiMinimize className="w-4 h-4" /> : <FiMaximize className="w-4 h-4" />}
               </button>
               <button
+                aria-label="Exit Interview"
                 onClick={exitInterview}
                 className="flex items-center justify-center text-error hover:bg-error/10 transition-colors bg-surface-hover border border-border rounded-lg p-2 ml-2"
                 title="Exit Interview"

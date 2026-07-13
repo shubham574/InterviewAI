@@ -11,21 +11,21 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import CustomCursor from './components/ui/CustomCursor';
 
 // Pages
-import Landing from './pages/Landing';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import JobAnalysis from './pages/JobAnalysis';
-import MCQGenerator from './pages/MCQGenerator';
-import AssessmentTest from './pages/AssessmentTest';
-import InterviewQuestions from './pages/InterviewQuestions';
-import MockInterview from './pages/MockInterview';
-import ResumeAnalyzer from './pages/ResumeAnalyzer';
-import History from './pages/History';
-import Profile from './pages/Profile';
-import LiveInterview from './pages/LiveInterview';
+const Landing = React.lazy(() => import('./pages/Landing'));
+const Login = React.lazy(() => import('./pages/Login'));
+const Register = React.lazy(() => import('./pages/Register'));
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const JobAnalysis = React.lazy(() => import('./pages/JobAnalysis'));
+const MCQGenerator = React.lazy(() => import('./pages/MCQGenerator'));
+const AssessmentTest = React.lazy(() => import('./pages/AssessmentTest'));
+const InterviewQuestions = React.lazy(() => import('./pages/InterviewQuestions'));
+const MockInterview = React.lazy(() => import('./pages/MockInterview'));
+const ResumeAnalyzer = React.lazy(() => import('./pages/ResumeAnalyzer'));
+const History = React.lazy(() => import('./pages/History'));
+const Profile = React.lazy(() => import('./pages/Profile'));
+const LiveInterview = React.lazy(() => import('./pages/LiveInterview'));
 
-// Create a client
+// ... (keep queryClient)
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -44,26 +44,32 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <Router>
             <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Landing />} />
-              <Route path="/login/*" element={<Login />} />
-              <Route path="/register/*" element={<Register />} />
+            <React.Suspense fallback={
+              <div className="flex items-center justify-center min-h-screen bg-bg-canvas">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-primary"></div>
+              </div>
+            }>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Landing />} />
+                <Route path="/login/*" element={<Login />} />
+                <Route path="/register/*" element={<Register />} />
 
-              {/* Protected Routes inside Layout */}
-              <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/job-analysis" element={<JobAnalysis />} />
-                <Route path="/mcq-generator" element={<MCQGenerator />} />
-                <Route path="/assessment/:id" element={<AssessmentTest />} />
-                <Route path="/interview-questions" element={<InterviewQuestions />} />
-                <Route path="/mock-interview" element={<MockInterview />} />
-                <Route path="/live-interview" element={<LiveInterview />} />
-                <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
-                <Route path="/history" element={<History />} />
-                <Route path="/profile/*" element={<Profile />} />
-              </Route>
-            </Routes>
+                {/* Protected Routes inside Layout */}
+                <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/job-analysis" element={<JobAnalysis />} />
+                  <Route path="/mcq-generator" element={<MCQGenerator />} />
+                  <Route path="/assessment/:id" element={<AssessmentTest />} />
+                  <Route path="/interview-questions" element={<InterviewQuestions />} />
+                  <Route path="/mock-interview" element={<MockInterview />} />
+                  <Route path="/live-interview" element={<LiveInterview />} />
+                  <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
+                  <Route path="/history" element={<History />} />
+                  <Route path="/profile/*" element={<Profile />} />
+                </Route>
+              </Routes>
+            </React.Suspense>
           </Router>
         </QueryClientProvider>
       </ReactLenis>

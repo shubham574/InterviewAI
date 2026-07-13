@@ -20,6 +20,6 @@ const upload = multer({
 });
 
 router.post('/', protect, upload.single('audio'), transcribeAudio);
-router.post('/tts', protect, generateSpeech);
+router.post('/tts', generateSpeech);
 
 module.exports = router;
