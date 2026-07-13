@@ -20,7 +20,7 @@ const Layout = () => {
       <div className="flex flex-col flex-1 w-full overflow-hidden">
         <Navbar toggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
         
-        <main className="flex-1 overflow-y-auto overflow-x-hidden focus:outline-none scrollbar-thin relative bg-bg-canvas">
+        <main className="flex-1 overflow-y-auto overflow-x-clip focus:outline-none scrollbar-thin relative bg-bg-canvas">
           {/* Subtle background decoration */}
           <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-accent-primary/10 to-transparent pointer-events-none -z-10" />
           

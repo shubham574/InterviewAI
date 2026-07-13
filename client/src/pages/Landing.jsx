@@ -353,7 +353,7 @@ const Landing = () => {
     <>
       {!preloaderComplete && <Preloader onComplete={() => setPreloaderComplete(true)} />}
       
-      <div className="min-h-screen bg-bg-canvas text-text-primary font-body overflow-x-hidden">
+      <div className="min-h-screen bg-bg-canvas text-text-primary font-body overflow-x-clip">
       
       {/* ─── 1. Navigation Bar ─── */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 flex justify-center pt-6 px-4`}>
@@ -459,7 +459,7 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto px-6 mb-8 text-center">
           <p className="text-xs font-mono text-text-secondary uppercase tracking-widest">Powered by modern web technologies</p>
         </div>
-        <div className="relative w-full flex overflow-x-hidden">
+        <div className="relative w-full flex overflow-x-clip">
           <div className="flex w-max animate-scroll-logos opacity-50 items-center">
             {['React', 'Gemini AI', 'MongoDB', 'Express', 'Clerk Auth', 'Socket.io', 'Tailwind CSS', 'Vite'].map((tech, i) => (
               <span key={i} className="text-xl font-bold text-text-secondary mx-12 font-display shrink-0 flex items-center gap-2">
