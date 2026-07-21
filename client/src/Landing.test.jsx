@@ -28,7 +28,7 @@ describe('Landing Page', () => {
     );
     
     // Check if the main pitch is in the document
-    const heading = screen.getByText(/Master Your/i);
+    const heading = screen.getByText(/Master the art of/i);
     expect(heading).toBeInTheDocument();
   });
 });
