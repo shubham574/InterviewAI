@@ -60,9 +60,9 @@ exports.generateSpeech = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    // We use aura-luna-en as it's a friendly female voice. Deepgram doesn't have an Indian accent female voice yet.
+    // We use aura-asteria-en as it's a clear female voice.
     const response = await fetch(
-      'https://api.deepgram.com/v1/speak?model=aura-luna-en',
+      'https://api.deepgram.com/v1/speak?model=aura-asteria-en',
       {
         method: 'POST',
         headers: {

@@ -60,6 +60,10 @@ const useShristi = ({ getToken }) => {
         audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
       }
       
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+      
       const audioBuffer = await audioContextRef.current.decodeAudioData(data);
       const source = audioContextRef.current.createBufferSource();
       source.buffer = audioBuffer;
