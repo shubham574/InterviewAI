@@ -35,7 +35,7 @@ const useShristi = ({ getToken }) => {
       try {
         sourceNodeRef.current.stop();
         sourceNodeRef.current.disconnect();
-      } catch (e) {}
+      } catch (e) { /* ignore */ }
       sourceNodeRef.current = null;
     }
     setIsSpeaking(false);
@@ -382,7 +382,7 @@ const LiveInterview = () => {
          }
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [shristiMessage]);
 
   // ── Greet user when interview starts
@@ -391,7 +391,7 @@ const LiveInterview = () => {
       const greeting = `Hello ${userName}! I'm Shristi, your AI interviewer today. We'll be going through ${session.totalQuestions} questions tailored to the ${session.jobRole} role. Let's start with the first question. ${session.questions[0]?.question}`;
       setShristiMessage(greeting);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [screen, session]);
 
   // ─── Start interview
