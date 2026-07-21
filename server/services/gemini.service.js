@@ -11,7 +11,7 @@ const generateContent = async (prompt, customApiKey = null, retries = 3) => {
   const ai = new GoogleGenAI({ apiKey });
 
   let lastError;
-  let currentModel = 'gemini-2.5-flash';
+  let currentModel = 'gemini-1.5-flash';
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const response = await ai.models.generateContent({
@@ -37,9 +37,9 @@ const generateContent = async (prompt, customApiKey = null, retries = 3) => {
       console.error(`Gemini API Attempt ${attempt} failed with ${currentModel}: ${error.message}`);
 
       // Fallback for 503 High Demand / Unavailable
-      if (error.message && (error.message.includes('503') || error.message.includes('UNAVAILABLE') || error.message.includes('high demand')) && currentModel === 'gemini-2.5-flash') {
-         console.warn("Model gemini-2.5-flash is experiencing high demand, falling back to gemini-1.5-flash...");
-         currentModel = 'gemini-1.5-flash';
+      if (error.message && (error.message.includes('503') || error.message.includes('UNAVAILABLE') || error.message.includes('high demand')) && currentModel === 'gemini-1.5-flash') {
+         console.warn("Model gemini-1.5-flash is experiencing high demand, falling back to gemini-1.5-pro...");
+         currentModel = 'gemini-1.5-pro';
       }
 
       // Don't retry on auth/key errors - they won't resolve on retry
