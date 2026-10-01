@@ -369,7 +369,6 @@ const Landing = () => {
           <nav className="hidden md:flex items-center space-x-8">
             <button onClick={() => scrollToSection('features')} className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">Features</button>
             <button onClick={() => scrollToSection('how-it-works')} className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">How it works</button>
-            <button onClick={() => scrollToSection('testimonials')} className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">Testimonials</button>
           </nav>
 
           {/* Auth & Theme Buttons */}
@@ -676,56 +675,6 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* ─── 7. Testimonials ─── */}
-      <section id="testimonials" className="py-24 bg-bg-canvas">
-        <motion.div 
-          className="max-w-7xl mx-auto px-6"
-          variants={getWarmContainer()}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <motion.h2 variants={getWarmItem()} className="text-3xl md:text-5xl font-bold font-display text-text-primary mb-4">
-              Trusted by successful candidates
-            </motion.h2>
-            <motion.p variants={getWarmItem()} className="text-lg text-text-secondary">
-              See how InterviewAce helped professionals land their dream jobs.
-            </motion.p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <motion.div variants={getWarmItem()}>
-              <TestimonialCard 
-                quote="The AI mock interviews were incredibly realistic. The feedback on my communication style helped me fix issues I didn't even know I had. Landed a senior dev role at a FAANG company!"
-                name="Sarah Jenkins"
-                role="Senior Frontend Developer"
-                initials="SJ"
-                color="bg-accent-primary/20 text-accent-glow"
-              />
-            </motion.div>
-            <motion.div variants={getWarmItem()}>
-              <TestimonialCard 
-                quote="I was struggling to tailor my prep for specific roles. The Job Description Analyzer broke down exactly what I needed to study. The 4-week roadmap was a game-changer."
-                name="Michael Chen"
-                role="Product Manager"
-                initials="MC"
-                color="bg-success/20 text-success"
-              />
-            </motion.div>
-            <motion.div variants={getWarmItem()}>
-              <TestimonialCard 
-                quote="As a recent grad, interviews terrified me. Practicing with InterviewAce built my confidence immensely. The curated question bank was spot-on for what I was actually asked."
-                name="Emily Rodriguez"
-                role="Data Analyst"
-                initials="ER"
-                color="bg-warning/20 text-warning"
-              />
-            </motion.div>
-          </div>
-        </motion.div>
-      </section>
-
       {/* ─── 8. Final CTA Band ─── */}
       <section className="py-24 bg-bg-surface relative overflow-hidden border-y border-border-subtle">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-accent-primary/20 via-bg-surface to-bg-surface"></div>
@@ -905,33 +854,6 @@ const TechArchitecture = () => {
       </div>
 
     </div>
-  );
-};
-
-const TestimonialCard = ({ quote, name, role, initials, color }) => {
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      className="bg-bg-elevated rounded-3xl p-8 border border-border-subtle shadow-sm flex flex-col h-full hover-lift"
-    >
-      <div className="flex text-accent-glow mb-6">
-        {[1, 2, 3, 4, 5].map(i => (
-          <FiCheckCircle key={i} size={16} className="mr-1 fill-accent-primary/20" />
-        ))}
-      </div>
-      <p className="text-text-secondary text-lg mb-8 italic flex-1 leading-relaxed">"{quote}"</p>
-      <div className="flex items-center gap-4 mt-auto">
-        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${color}`}>
-          {initials}
-        </div>
-        <div>
-          <h4 className="font-bold text-text-primary">{name}</h4>
-          <p className="text-sm text-text-secondary">{role}</p>
-        </div>
-      </div>
-    </motion.div>
   );
 };
 
