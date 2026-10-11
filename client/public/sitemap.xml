@@ -22,12 +22,64 @@
     </image:image>
   </url>
 
+  <!-- React Developers Track (Long-Tail SEO) -->
+  <url>
+    <loc>https://interview-ai-ten-psi.vercel.app/mock-interview-for-react-developers</loc>
+    <lastmod>2026-10-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://interview-ai-ten-psi.vercel.app/og-image.png</image:loc>
+      <image:title>AI Mock Interview for React Developers</image:title>
+      <image:caption>Master React 19, hooks, performance profiling, and state management</image:caption>
+    </image:image>
+  </url>
+
+  <!-- Resume-Based Interview Questions (Long-Tail SEO) -->
+  <url>
+    <loc>https://interview-ai-ten-psi.vercel.app/resume-based-interview-questions</loc>
+    <lastmod>2026-10-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://interview-ai-ten-psi.vercel.app/og-image.png</image:loc>
+      <image:title>Resume-Based Interview Questions &amp; AI Mock Practice</image:title>
+      <image:caption>Turn resume bullet points and job descriptions into targeted technical questions</image:caption>
+    </image:image>
+  </url>
+
+  <!-- System Design Mock Interview (Long-Tail SEO) -->
+  <url>
+    <loc>https://interview-ai-ten-psi.vercel.app/system-design-mock-interview</loc>
+    <lastmod>2026-10-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://interview-ai-ten-psi.vercel.app/og-image.png</image:loc>
+      <image:title>AI System Design Mock Interview Simulator</image:title>
+      <image:caption>Practice distributed systems, caching, sharding, and high-availability architecture</image:caption>
+    </image:image>
+  </url>
+
+  <!-- Freshers & College Graduates (Long-Tail SEO) -->
+  <url>
+    <loc>https://interview-ai-ten-psi.vercel.app/mock-interview-for-freshers</loc>
+    <lastmod>2026-10-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://interview-ai-ten-psi.vercel.app/og-image.png</image:loc>
+      <image:title>AI Mock Interview for Freshers &amp; College Graduates</image:title>
+      <image:caption>Prepare for campus placements with DSA, OOP, DBMS, and behavioral practice</image:caption>
+    </image:image>
+  </url>
+
   <!-- User Onboarding / Registration -->
   <url>
     <loc>https://interview-ai-ten-psi.vercel.app/register</loc>
     <lastmod>2026-10-12</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.8</priority>
   </url>
 
   <!-- User Authentication / Login -->

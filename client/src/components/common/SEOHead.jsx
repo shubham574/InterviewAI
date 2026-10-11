@@ -43,8 +43,10 @@ const SEOHead = ({
       'Practice real-time technical mock interviews with Shristi, your AI interviewer. Master coding assessments, system design, behavioral questions, and resume ATS analysis with instant actionable AI feedback.';
     setMeta('description', finalDescription);
 
-    if (keywords) {
-      setMeta('keywords', Array.isArray(keywords) ? keywords.join(', ') : keywords);
+    // Remove obsolete meta-keywords if present in DOM (Google ignores it)
+    const existingKeywords = document.querySelector('meta[name="keywords"]');
+    if (existingKeywords) {
+      existingKeywords.remove();
     }
     setMeta('robots', robots);
 

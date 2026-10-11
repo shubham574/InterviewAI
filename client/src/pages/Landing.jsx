@@ -748,7 +748,7 @@ const Landing = () => {
         transition={{ duration: shouldReduceMotion ? 0.15 : 0.4, ease: [0.16, 1, 0.3, 1] }}
       >
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             
             {/* Brand Column */}
             <div className="flex flex-col">
@@ -758,13 +758,13 @@ const Landing = () => {
                 </span>
               </Link>
               <p className="text-sm text-text-secondary mb-6 max-w-sm leading-relaxed">
-                The ultimate AI-powered platform for interview preparation. Build confidence and land your dream job.
+                The ultimate AI-powered platform for interview preparation. Build confidence and land your dream role.
               </p>
               <div className="flex space-x-4">
-                <a href="https://github.com/shubham574" target="_blank" rel="noopener noreferrer" className="p-3 -ml-3 text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 rounded-lg">
+                <a href="https://github.com/shubham574/InterviewAI" target="_blank" rel="noopener noreferrer" className="p-3 -ml-3 text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 rounded-lg" aria-label="GitHub Repository">
                   <FiGithub size={20} />
                 </a>
-                <a href="https://www.linkedin.com/in/shubham-maurya-937511309/" target="_blank" rel="noopener noreferrer" className="p-3 text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 rounded-lg">
+                <a href="https://www.linkedin.com/in/shubham-maurya-937511309/" target="_blank" rel="noopener noreferrer" className="p-3 text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 rounded-lg" aria-label="LinkedIn Profile">
                   <FiLinkedin size={20} />
                 </a>
               </div>
@@ -782,17 +782,48 @@ const Landing = () => {
               </ul>
             </div>
 
-            {/* Resources Column */}
+            {/* Interview Guides & Roles (SEO internal links) */}
+            <div className="flex flex-col">
+              <h4 className="text-text-secondary font-mono text-sm tracking-wider uppercase mb-6">Prep Guides</h4>
+              <ul className="space-y-4">
+                <li>
+                  <Link to="/mock-interview-for-react-developers" className="text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 inline-block py-1">
+                    React Interview Prep
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/resume-based-interview-questions" className="text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 inline-block py-1">
+                    Resume Questions
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/system-design-mock-interview" className="text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 inline-block py-1">
+                    System Design Mock
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/mock-interview-for-freshers" className="text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 inline-block py-1">
+                    Freshers Placement Prep
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Resources & Tech Stack Column */}
             <div className="flex flex-col">
               <h4 className="text-text-secondary font-mono text-sm tracking-wider uppercase mb-6">Developer</h4>
               <ul className="space-y-4">
-                <li><a href="#" className="text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 inline-block py-1">GitHub Repository</a></li>
+                <li>
+                  <a href="https://github.com/shubham574/InterviewAI" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 inline-block py-1">
+                    GitHub Repository
+                  </a>
+                </li>
                 <li>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    <span className="px-2 py-1 bg-bg-canvas border border-border-subtle rounded text-xs text-text-secondary font-mono">React</span>
-                    <span className="px-2 py-1 bg-bg-canvas border border-border-subtle rounded text-xs text-text-secondary font-mono">Express</span>
+                    <span className="px-2 py-1 bg-bg-canvas border border-border-subtle rounded text-xs text-text-secondary font-mono">React 19</span>
+                    <span className="px-2 py-1 bg-bg-canvas border border-border-subtle rounded text-xs text-text-secondary font-mono">Express 5</span>
                     <span className="px-2 py-1 bg-bg-canvas border border-border-subtle rounded text-xs text-text-secondary font-mono">MongoDB</span>
-                    <span className="px-2 py-1 bg-bg-canvas border border-border-subtle rounded text-xs text-text-secondary font-mono">Gemini</span>
+                    <span className="px-2 py-1 bg-bg-canvas border border-border-subtle rounded text-xs text-text-secondary font-mono">Gemini AI</span>
                   </div>
                 </li>
               </ul>

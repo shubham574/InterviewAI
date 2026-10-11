@@ -22,6 +22,10 @@ const ResumeAnalyzer = React.lazy(() => import('./pages/ResumeAnalyzer'));
 const History = React.lazy(() => import('./pages/History'));
 const Profile = React.lazy(() => import('./pages/Profile'));
 const LiveInterview = React.lazy(() => import('./pages/LiveInterview'));
+const ReactMockInterview = React.lazy(() => import('./pages/ReactMockInterview'));
+const ResumeQuestions = React.lazy(() => import('./pages/ResumeQuestions'));
+const SystemDesignMockInterview = React.lazy(() => import('./pages/SystemDesignMockInterview'));
+const FreshersMockInterview = React.lazy(() => import('./pages/FreshersMockInterview'));
 
 // ... (keep queryClient)
 const queryClient = new QueryClient({
@@ -47,8 +51,12 @@ function App() {
             </div>
           }>
             <Routes>
-              {/* Public Routes */}
+              {/* Public Marketing & SEO Landing Routes */}
               <Route path="/" element={<Landing />} />
+              <Route path="/mock-interview-for-react-developers" element={<ReactMockInterview />} />
+              <Route path="/resume-based-interview-questions" element={<ResumeQuestions />} />
+              <Route path="/system-design-mock-interview" element={<SystemDesignMockInterview />} />
+              <Route path="/mock-interview-for-freshers" element={<FreshersMockInterview />} />
               <Route path="/login/*" element={<Login />} />
               <Route path="/register/*" element={<Register />} />
 
