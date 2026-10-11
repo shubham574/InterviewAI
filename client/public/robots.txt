@@ -5,6 +5,10 @@ User-agent: *
 Allow: /
 Allow: /login
 Allow: /register
+Allow: /mock-interview-for-react-developers
+Allow: /resume-based-interview-questions
+Allow: /system-design-mock-interview
+Allow: /mock-interview-for-freshers
 Allow: /assets/
 Allow: /*.png$
 Allow: /*.jpg$

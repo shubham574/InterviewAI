@@ -26,6 +26,7 @@ It's not just another generic quiz app; it's a personalized interview coach buil
 - **Enterprise-Grade Security:** Fully integrated with Clerk for secure, seamless authentication (both client and server-side verification).
 - **Performance Analytics:** Visual tracking of your interview scores over time using interactive Recharts.
 - **Polished UI/UX:** Built with React 19, Vite, and Tailwind CSS v4, featuring smooth micro-animations via Framer Motion.
+- **Search-Engine Indexed Public Tracks:** Dedicated guides and simulators for [React Developers](https://interview-ai-ten-psi.vercel.app/mock-interview-for-react-developers), [Resume-Based Defense](https://interview-ai-ten-psi.vercel.app/resume-based-interview-questions), [System Design](https://interview-ai-ten-psi.vercel.app/system-design-mock-interview), and [Campus Placement for Freshers](https://interview-ai-ten-psi.vercel.app/mock-interview-for-freshers).
 
 ## 💻 Tech Stack
 InterviewAce uses a modern, strictly separated client/server architecture.
