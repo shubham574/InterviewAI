@@ -1,7 +1,7 @@
 const LiveInterview = require('../models/LiveInterview');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
-const { generateLiveQuestions, evaluateLiveAnswer } = require('../services/liveInterview.service');
+const { generateLiveQuestions, evaluateSmallTalk, evaluateLiveAnswer } = require('../services/liveInterview.service');
 const { LIVE_INTERVIEW_GEMINI_API_KEY } = require('../config/env');
 
 // Resolve which Gemini key to use:
@@ -22,7 +22,7 @@ exports.startInterview = asyncHandler(async (req, res, next) => {
 
   const customApiKey = resolveApiKey(req);
 
-  // Generate questions tailored to the JD and chosen difficulty
+  // Generate questions tailored to the JD with progressive difficulty (starting with a light one-line warm-up)
   const aiResult = await generateLiveQuestions(
     jobRole,
     jobDescription,
@@ -33,10 +33,18 @@ exports.startInterview = asyncHandler(async (req, res, next) => {
 
   const questions = (aiResult.questions || []).map((q) => ({
     question: q.question,
-    category: q.category || 'General',
+    category: q.category || 'Technical',
     difficulty: q.difficulty || difficulty || 'Medium',
     keyPoints: q.keyPoints || [],
   }));
+
+  // Friendly, comforting non-technical Indian small-talk templates to ease interview anxiety
+  const smallTalkTemplates = [
+    `Namaste ${userName}! It is so wonderful to meet you today. I'm Shristi! Before we jump into anything technical, please take a slow, comfortable breath and relax. How has your day been going so far? Did you manage to grab a nice cup of chai or coffee before joining?`,
+    `Hello ${userName}! A very warm welcome to you today. I'm Shristi, your interviewer. Take a comfortable breath — there is zero stress here today! How has your week been treating you so far? Everything going well on your side?`,
+    `Namaste ${userName}! So great to have you here today. Before we talk tech, let's ease in. How are things on your side today? Feeling relaxed and comfortable?`
+  ];
+  const smallTalkQuestion = smallTalkTemplates[Math.floor(Math.random() * smallTalkTemplates.length)];
 
   const session = await LiveInterview.create({
     userId: req.auth.userId,
@@ -45,6 +53,8 @@ exports.startInterview = asyncHandler(async (req, res, next) => {
     jobDescription,
     totalQuestions: questions.length,
     difficulty,
+    smallTalkQuestion,
+    smallTalkCompleted: false,
     questions,
   });
 
@@ -70,12 +80,56 @@ exports.submitTurn = asyncHandler(async (req, res, next) => {
   if (session.userId.toString() !== req.auth.userId) return next(new ApiError(401, 'Not authorized'));
   if (session.status === 'completed') return next(new ApiError(400, 'Interview already completed'));
 
+  const customApiKey = resolveApiKey(req);
+
+  // Handle Small-Talk Icebreaker Turn (questionIndex === -1)
+  if (questionIndex === -1) {
+    const evaluation = await evaluateSmallTalk(
+      session.userName,
+      session.smallTalkQuestion || 'How has your day been going so far?',
+      userAnswer,
+      session.jobRole,
+      customApiKey
+    );
+
+    const spokenResponse = evaluation.shristiResponse ||
+      `That is so great to hear! Take a deep breath — zero stress today, we are just having a friendly conversation. Let's start nice and easy with a quick warm-up question!`;
+
+    session.smallTalkCompleted = true;
+    session.turns.push({
+      questionIndex: -1,
+      attempt: 1,
+      userAnswer,
+      score: 10,
+      isPassing: true,
+      action: 'next',
+      shristiResponse: spokenResponse,
+      feedback: 'Small talk icebreaker completed with positive rapport.',
+      strengths: ['Warm and approachable communication'],
+      improvements: [],
+    });
+
+    await session.save();
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        score: 10,
+        isPassing: true,
+        action: 'next',
+        isSmallTalk: true,
+        shristiResponse: spokenResponse,
+        feedback: 'Comforted and ready for Question 1',
+        strengths: ['Warm and approachable communication'],
+        improvements: [],
+      },
+    });
+  }
+
   const question = session.questions[questionIndex];
   if (!question) return next(new ApiError(400, 'Invalid question index'));
 
-  const customApiKey = resolveApiKey(req);
-
-  // Get Shristi's evaluation
+  // Get Shristi's evaluation with empathetic panic/fumble handling
   const evaluation = await evaluateLiveAnswer(
     question.question,
     userAnswer,
@@ -89,7 +143,7 @@ exports.submitTurn = asyncHandler(async (req, res, next) => {
   if (attempt >= 2 && evaluation.action === 'retry') {
     evaluation.action = 'next';
     evaluation.shristiResponse =
-      `I appreciate your effort. Let's move on to the next question. ` +
+      `I really appreciate your honest effort. Take a deep breath — let's move forward together to the next question! ` +
       (evaluation.shristiResponse || '');
   }
 
@@ -115,6 +169,7 @@ exports.submitTurn = asyncHandler(async (req, res, next) => {
       score: evaluation.score,
       isPassing: evaluation.isPassing,
       action: evaluation.action,
+      isPanicOrFumble: evaluation.isPanicOrFumble || false,
       shristiResponse: evaluation.shristiResponse,
       feedback: evaluation.feedback,
       strengths: evaluation.strengths,
@@ -134,18 +189,20 @@ exports.completeInterview = asyncHandler(async (req, res, next) => {
   const { turns } = session;
   if (turns.length === 0) return next(new ApiError(400, 'No answers recorded'));
 
-  // Calculate aggregate stats from all passing turns (best attempt per question)
+  // Calculate aggregate stats from all passing turns (best attempt per question), ignoring small talk (-1)
   const questionMap = {};
   turns.forEach((t) => {
     const key = t.questionIndex;
-    if (!questionMap[key] || t.score > questionMap[key].score) {
-      questionMap[key] = t;
+    if (key >= 0) {
+      if (!questionMap[key] || t.score > questionMap[key].score) {
+        questionMap[key] = t;
+      }
     }
   });
 
   const bestTurns = Object.values(questionMap);
   const totalScore = bestTurns.reduce((sum, t) => sum + (t.score || 0), 0);
-  const averageScore = Math.round((totalScore / bestTurns.length) * 10); // convert 0-10 → 0-100
+  const averageScore = bestTurns.length > 0 ? Math.round((totalScore / bestTurns.length) * 10) : 100; // convert 0-10 → 0-100
 
   const allStrengths = bestTurns.flatMap((t) => t.strengths || []);
   const allWeaknesses = bestTurns.flatMap((t) => t.improvements || []);

@@ -131,9 +131,21 @@ const useShristi = ({ getToken }) => {
 
       const selectFemaleVoice = (vList) => {
         if (!vList || vList.length === 0) return null;
+        // Priority 1: Natural Indian English & Hindi female voices
+        const indianFemale =
+          vList.find((v) =>
+            /Neerja|Heera|Veena|Lekha|Swara|Aditi|Raveena|Kavya|Pooja|Geeta|Ananya|Google English \(India\)|Google हिन्दी/i.test(v.name || '')
+          ) ||
+          vList.find((v) =>
+            (v.lang === 'en-IN' || v.lang === 'hi-IN' || v.lang === 'en_IN') &&
+            !/male|david|alex|george|ravi|kumar|prabhat/i.test(v.name || '')
+          );
+        if (indianFemale) return indianFemale;
+
+        // Priority 2: Other warm, gentle natural female voices
         return (
           vList.find((v) =>
-            /Google UK English Female|Google US English|Zira|Jenny|Aria|Samantha|Victoria|Karen|Moira|Tessa|Ava|Allison|Susan/i.test(v.name || '')
+            /Google UK English Female|Natural|Jenny|Aria|Samantha|Victoria|Karen|Moira|Tessa|Ava|Allison|Susan/i.test(v.name || '')
           ) ||
           vList.find((v) => (v.lang || '').startsWith('en') && /female/i.test(v.name || '')) ||
           vList.find((v) => (v.lang || '').startsWith('en') && !/male|david|alex|george|mark/i.test(v.name || '')) ||
@@ -155,8 +167,9 @@ const useShristi = ({ getToken }) => {
         window.speechSynthesis.addEventListener('voiceschanged', onVoices);
       }
 
-      utterance.rate = 1.0;
-      utterance.pitch = 1.05; // Slightly elevated pitch for natural female tone
+      // Calm, polite, soothing conversational pace (unhurried Indian rhythm)
+      utterance.rate = 0.94;
+      utterance.pitch = 1.03; // Gentle, friendly, warm female tone
 
       let finished = false;
       const finish = () => {
@@ -525,6 +538,8 @@ const LiveInterview = () => {
   
   // ── Flow & Mode State
   const [isIntroPhase, setIsIntroPhase] = useState(true);
+  const [isSmallTalkPhase, setIsSmallTalkPhase] = useState(true);
+  const [isCalmingActive, setIsCalmingActive] = useState(false);
   const [isTextMode, setIsTextMode] = useState(false);
   const [typedAnswer, setTypedAnswer] = useState('');
 
@@ -584,6 +599,47 @@ const LiveInterview = () => {
     setIsThinking(true);
     setShristiHasSpoken(false);
 
+    // If currently in Small Talk icebreaker phase, submit turn to comfort candidate
+    if (isSmallTalkPhase) {
+      try {
+        const token = await getToken();
+        const geminiKey = localStorage.getItem('custom_gemini_key');
+        const headers = { Authorization: `Bearer ${token}` };
+        if (geminiKey) headers['x-gemini-api-key'] = geminiKey;
+
+        const { data } = await api.post(
+          API.LIVE_INTERVIEW.TURN(session._id),
+          { questionIndex: -1, userAnswer: answerText },
+          { headers }
+        );
+
+        const result = data.data;
+        setIsThinking(false);
+        setIsSmallTalkPhase(false);
+        setIsIntroPhase(false);
+
+        const comfortingReply = result.shristiResponse ||
+          "That is so wonderful to hear! Take a slow, comfortable breath — zero stress today, we are just having a friendly conversation. Let's start nice and easy with a quick warm-up question!";
+
+        setChatHistory(prev => [...prev, { id: 'shristi-comfort', sender: 'shristi', text: comfortingReply }]);
+
+        speak(comfortingReply, () => {
+          setTimeout(() => {
+            presentFirstQuestion(session);
+          }, 600);
+        });
+      } catch (err) {
+        setIsThinking(false);
+        setIsSmallTalkPhase(false);
+        setIsIntroPhase(false);
+        presentFirstQuestion(session);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    // Regular question turn
     try {
       const token = await getToken();
       const geminiKey = localStorage.getItem('custom_gemini_key');
@@ -599,8 +655,13 @@ const LiveInterview = () => {
       const result = data.data;
       setIsThinking(false);
 
+      if (result.isPanicOrFumble) {
+        setIsCalmingActive(true);
+        setTimeout(() => setIsCalmingActive(false), 9000);
+      }
+
       if (result.action === 'retry') {
-        // Re-ask same question with Shristi's guidance
+        // Re-ask same question with Shristi's calming guidance
         setPreviousAnswer(answerText);
         setAttempt((a) => a + 1);
         setShristiMessage(result.shristiResponse);
@@ -613,7 +674,8 @@ const LiveInterview = () => {
           setAttempt(1);
           setPreviousAnswer(null);
           setTypedAnswer('');
-          setShristiMessage(`${result.shristiResponse}\n\nQuestion ${nextIndex + 1}: ${nextQ.question}`);
+          const lengthLabel = nextIndex === 0 ? 'Warm-up' : nextIndex === 1 ? 'Foundational' : 'Technical';
+          setShristiMessage(`${result.shristiResponse}\n\nQuestion ${nextIndex + 1} (${lengthLabel}): ${nextQ.question}`);
         } else {
           // All questions done — complete interview
           setTypedAnswer('');
@@ -645,7 +707,7 @@ const LiveInterview = () => {
       setChatHistory(prev => [...prev, { id: Date.now().toString(), sender: 'user', text: t }]);
       await handleSubmitAnswer(t);
     }
-  }, [isTextMode, currentQIndex, attempt, previousAnswer, session]);
+  }, [isTextMode, isSmallTalkPhase, currentQIndex, attempt, previousAnswer, session]);
 
   const { isRecording, isTranscribing, error: recorderError, toggleRecording, startRecording } = useVoiceRecorder({
     onTranscriptComplete: handleTranscriptComplete,
@@ -663,10 +725,11 @@ const LiveInterview = () => {
 
     const s = targetSession || session;
     if (!s || !s.questions || s.questions.length === 0) return;
+    setIsSmallTalkPhase(false);
     setIsIntroPhase(false);
 
     const firstQ = s.questions[0];
-    const q1Text = `Question 1: ${firstQ.question}`;
+    const q1Text = `Question 1 (Warm-up): ${firstQ.question}`;
 
     setChatHistory(prev => {
       if (prev.some(m => m.id === 'q-0')) return prev;
@@ -681,28 +744,43 @@ const LiveInterview = () => {
     });
   }, [session, isMuted, isTextMode, speak, startRecording]);
 
-  // ── Skip Intro action
+  // ── Skip Intro / Small Talk action
   const handleSkipIntro = useCallback(() => {
     stopSpeaking();
+    setIsSmallTalkPhase(false);
+    setIsIntroPhase(false);
     presentFirstQuestion(session);
   }, [stopSpeaking, presentFirstQuestion, session]);
 
-  // ── Step 1: Shristi Intro when interview screen loads
+  // ── Helper to request gentle hint / calming reassurance
+  const handleAskHintOrCalm = async () => {
+    if (isSubmitting || isThinking) return;
+    const calmMsg = "I'm feeling a bit nervous and blanking out, could you help calm me down and give a small hint?";
+    setChatHistory(prev => [...prev, { id: Date.now().toString(), sender: 'user', text: calmMsg }]);
+    await handleSubmitAnswer(calmMsg);
+  };
+
+  // ── Step 1: Shristi Warm Indian Greeting & Non-Technical Small Talk
   useEffect(() => {
-    if (screen === SCREEN.INTERVIEW && session && isIntroPhase && chatHistory.length === 0) {
+    if (screen === SCREEN.INTERVIEW && session && chatHistory.length === 0) {
       introFinishedRef.current = false;
-      const introGreeting = `Hello ${userName}! I'm Shristi, your AI interviewer today. We'll be going through ${session.totalQuestions} ${session.difficulty || difficulty} questions tailored to your ${session.jobRole} role. Listen carefully to each question, and answer naturally. Let's get started!`;
+      const smallTalkGreeting = session.smallTalkQuestion ||
+        `Namaste ${userName}! It is so lovely to meet you today. I'm Shristi! Before we jump into anything technical, please take a slow, comfortable breath and relax. How has your day been going so far? Did you manage to grab a nice cup of chai or coffee before joining?`;
 
-      setChatHistory([{ id: 'intro', sender: 'shristi', text: introGreeting }]);
+      setIsSmallTalkPhase(true);
+      setIsIntroPhase(true);
+      setChatHistory([{ id: 'smalltalk-intro', sender: 'shristi', text: smallTalkGreeting }]);
 
-      speak(introGreeting, () => {
-        // ONLY AFTER Shristi finishes her intro, show and speak Question 1!
-        introTimeoutRef.current = setTimeout(() => {
-          presentFirstQuestion(session);
-        }, 600);
+      speak(smallTalkGreeting, () => {
+        setShristiHasSpoken(true);
+        setIsIntroPhase(false);
+        // Candidate is now encouraged to answer! If in voice mode, automatically start recording!
+        if (!isMuted && !isTextMode) {
+          startRecording();
+        }
       });
     }
-  }, [screen, session, isIntroPhase, chatHistory.length, userName, difficulty, speak, presentFirstQuestion]);
+  }, [screen, session, chatHistory.length, userName, difficulty, isMuted, isTextMode, speak, startRecording]);
 
   // ── Speak Shristi's subsequent responses in interview
   useEffect(() => {
@@ -775,7 +853,9 @@ const LiveInterview = () => {
         { headers }
       );
       setSession(data.data);
+      setIsSmallTalkPhase(true);
       setIsIntroPhase(true);
+      setIsCalmingActive(false);
       setChatHistory([]);
       setCurrentQIndex(0);
       setAttempt(1);
@@ -1000,7 +1080,7 @@ const LiveInterview = () => {
                   {session.difficulty || difficulty}
                 </Badge>
               </div>
-              <p className="text-xs text-text-muted">with {userName}</p>
+              <p className="text-xs text-text-muted">with {userName} &bull; {isSmallTalkPhase ? '🌸 Icebreaker Check-in' : `Question ${currentQIndex + 1} of ${session.totalQuestions}`}</p>
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -1058,19 +1138,28 @@ const LiveInterview = () => {
              
              {/* WhatsApp Style Chat Area */}
              <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin">
-                {isIntroPhase && (
+                {isSmallTalkPhase && (
                   <div className="flex items-center justify-between p-3.5 rounded-2xl bg-accent-primary/10 border border-accent-primary/20 text-xs text-accent-primary animate-fade-in shadow-sm">
                     <span className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-accent-primary animate-ping" />
-                      👩‍💼 Shristi is introducing the interview...
+                      🌸 Warm Check-in with Shristi (Non-technical small talk to comfort you)
                     </span>
                     <button
                       type="button"
                       onClick={handleSkipIntro}
                       className="px-3 py-1 rounded-lg bg-accent-primary text-white font-semibold hover:bg-accent-glow transition-all cursor-pointer text-xs"
                     >
-                      Skip to First Question &rarr;
+                      Skip to Question 1 &rarr;
                     </button>
+                  </div>
+                )}
+
+                {isCalmingActive && (
+                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-400 animate-fade-in shadow-sm">
+                    <span className="flex items-center gap-2">
+                      <span>🌱</span>
+                      <span>Take a slow, deep breath — Shristi understands! There is zero rush, relax.</span>
+                    </span>
                   </div>
                 )}
 
@@ -1110,21 +1199,23 @@ const LiveInterview = () => {
                   </div>
                 )}
 
-                {isIntroPhase ? (
-                   <div className="flex flex-col sm:flex-row items-center gap-3 w-full justify-center py-2">
-                     <p className="text-xs text-text-muted font-medium flex items-center gap-2">
-                       <span className="w-2 h-2 rounded-full bg-accent-primary animate-pulse" />
-                       Listening to Shristi's intro. First question will display right after.
-                     </p>
-                     <button
-                       type="button"
-                       onClick={handleSkipIntro}
-                       className="text-xs text-accent-primary hover:underline font-bold cursor-pointer"
-                     >
-                       Skip Intro to Begin
-                     </button>
-                   </div>
-                ) : isTextMode ? (
+                {isSpeaking && isSmallTalkPhase && (
+                  <div className="flex items-center justify-between w-full max-w-lg px-3 py-1.5 rounded-xl bg-accent-primary/10 border border-accent-primary/20 text-xs text-accent-primary">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-accent-primary animate-pulse" />
+                      🌸 Shristi is greeting you...
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleSkipIntro}
+                      className="font-bold underline hover:text-accent-glow cursor-pointer text-xs"
+                    >
+                      Skip to Question 1 &rarr;
+                    </button>
+                  </div>
+                )}
+
+                {isTextMode ? (
                    <form onSubmit={handleSendTypedAnswer} className="w-full flex flex-col gap-2">
                      <div className="flex gap-2">
                        <textarea
@@ -1135,6 +1226,8 @@ const LiveInterview = () => {
                              ? '🎙️ Recording... click mic button to stop and transcribe'
                              : isTranscribing
                              ? '⏳ Transcribing your speech...'
+                             : isSmallTalkPhase
+                             ? 'Reply to Shristi (e.g., "Doing great, ready to get started!"), or click mic...'
                              : 'Type your answer here, or click mic to dictate...'
                          }
                          rows={2}
@@ -1165,11 +1258,28 @@ const LiveInterview = () => {
                          disabled={isSubmitting || isThinking || !typedAnswer.trim() || isRecording || isTranscribing}
                          className="bg-accent-primary text-white px-5 rounded-xl font-bold hover:bg-accent-glow transition-all disabled:opacity-50 cursor-pointer text-sm shrink-0 flex items-center justify-center"
                        >
-                         {isSubmitting ? <FiLoader className="animate-spin" /> : 'Send'}
+                         {isSubmitting ? <FiLoader className="animate-spin" /> : isSmallTalkPhase ? 'Reply' : 'Send'}
                        </button>
                      </div>
                      <div className="flex justify-between items-center text-xs text-text-muted">
-                       <span>Press Enter to submit, Shift+Enter for new line</span>
+                       {isSmallTalkPhase ? (
+                         <button
+                           type="button"
+                           onClick={handleSkipIntro}
+                           className="text-accent-primary hover:underline cursor-pointer font-medium"
+                         >
+                           Skip to Question 1 &rarr;
+                         </button>
+                       ) : (
+                         <button
+                           type="button"
+                           onClick={handleAskHintOrCalm}
+                           disabled={isSubmitting || isThinking}
+                           className="text-emerald-500 hover:text-emerald-400 font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                         >
+                           🌱 Feeling nervous or blanking out? Ask Shristi for a hint
+                         </button>
+                       )}
                        <button
                          type="button"
                          onClick={() => setIsTextMode(false)}
@@ -1187,7 +1297,7 @@ const LiveInterview = () => {
                           onClick={toggleRecording} 
                           className="flex items-center gap-2 bg-danger text-white px-8 py-3.5 rounded-full font-bold hover:bg-danger/90 transition-all animate-pulse shadow-lg shadow-danger/30 cursor-pointer"
                         >
-                           <FiStopCircle className="w-5 h-5" /> Stop & Submit Answer
+                           <FiStopCircle className="w-5 h-5" /> {isSmallTalkPhase ? "Stop & Send Reply" : "Stop & Submit Answer"}
                         </button>
                      ) : (
                         <button 
@@ -1196,18 +1306,49 @@ const LiveInterview = () => {
                           disabled={isSpeaking || isSubmitting || isTranscribing} 
                           className="flex items-center gap-2 bg-accent-primary text-white px-8 py-3.5 rounded-full font-bold hover:bg-accent-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-accent-primary/20 cursor-pointer"
                         >
-                           <FiMic className="w-5 h-5" /> {isSpeaking ? "Wait for Shristi..." : "Tap to Answer"}
+                           <FiMic className="w-5 h-5" /> {isSpeaking ? (isSmallTalkPhase ? "Listening to Shristi..." : "Wait for Shristi...") : (isSmallTalkPhase ? "Tap to Reply to Shristi" : "Tap to Answer")}
                         </button>
                      )}
                      <div className="flex items-center justify-between w-full max-w-lg px-2 text-xs text-text-muted">
-                       <span>{isRecording ? "Listening to your answer..." : "Answers are transcribed and submitted automatically."}</span>
-                       <button
-                         type="button"
-                         onClick={() => setIsTextMode(true)}
-                         className="text-accent-primary hover:underline font-semibold cursor-pointer ml-3 shrink-0"
-                       >
-                         Type Answer Instead
-                       </button>
+                       {isSmallTalkPhase ? (
+                         <>
+                           <span className="text-text-muted">🌸 Zero stress: friendly warm-up with Shristi</span>
+                           <div className="flex items-center gap-3">
+                             <button
+                               type="button"
+                               onClick={handleSkipIntro}
+                               className="text-accent-primary hover:underline font-semibold cursor-pointer"
+                             >
+                               Skip to Q1 &rarr;
+                             </button>
+                             <button
+                               type="button"
+                               onClick={() => setIsTextMode(true)}
+                               className="text-accent-primary hover:underline font-semibold cursor-pointer shrink-0"
+                             >
+                               Type Instead
+                             </button>
+                           </div>
+                         </>
+                       ) : (
+                         <>
+                           <button
+                             type="button"
+                             onClick={handleAskHintOrCalm}
+                             disabled={isSpeaking || isSubmitting || isThinking}
+                             className="text-emerald-500 hover:text-emerald-400 font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                           >
+                             🌱 Feeling nervous or stuck? Ask for a hint
+                           </button>
+                           <button
+                             type="button"
+                             onClick={() => setIsTextMode(true)}
+                             className="text-accent-primary hover:underline font-semibold cursor-pointer ml-3 shrink-0"
+                           >
+                             Type Answer Instead
+                           </button>
+                         </>
+                       )}
                      </div>
                    </div>
                 )}

@@ -32,6 +32,14 @@ const LiveInterviewSchema = new mongoose.Schema(
       enum: ['in-progress', 'completed'],
       default: 'in-progress',
     },
+    smallTalkQuestion: {
+      type: String,
+      default: '',
+    },
+    smallTalkCompleted: {
+      type: Boolean,
+      default: false,
+    },
     questions: [
       {
         question: String,

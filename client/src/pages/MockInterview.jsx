@@ -125,9 +125,21 @@ const useQuestionSpeech = ({ getToken }) => {
 
       const selectFemaleVoice = (vList) => {
         if (!vList || vList.length === 0) return null;
+        // Priority 1: Natural Indian English & Hindi female voices
+        const indianFemale =
+          vList.find((v) =>
+            /Neerja|Heera|Veena|Lekha|Swara|Aditi|Raveena|Kavya|Pooja|Geeta|Ananya|Google English \(India\)|Google हिन्दी/i.test(v.name || '')
+          ) ||
+          vList.find((v) =>
+            (v.lang === 'en-IN' || v.lang === 'hi-IN' || v.lang === 'en_IN') &&
+            !/male|david|alex|george|ravi|kumar|prabhat/i.test(v.name || '')
+          );
+        if (indianFemale) return indianFemale;
+
+        // Priority 2: Other warm, gentle natural female voices
         return (
           vList.find((v) =>
-            /Google UK English Female|Google US English|Zira|Jenny|Aria|Samantha|Victoria|Karen|Moira|Tessa|Ava|Allison|Susan/i.test(v.name || '')
+            /Google UK English Female|Natural|Jenny|Aria|Samantha|Victoria|Karen|Moira|Tessa|Ava|Allison|Susan/i.test(v.name || '')
           ) ||
           vList.find((v) => (v.lang || '').startsWith('en') && /female/i.test(v.name || '')) ||
           vList.find((v) => (v.lang || '').startsWith('en') && !/male|david|alex|george|mark/i.test(v.name || '')) ||
@@ -149,8 +161,9 @@ const useQuestionSpeech = ({ getToken }) => {
         window.speechSynthesis.addEventListener('voiceschanged', onVoices);
       }
 
-      utterance.rate = 1.0;
-      utterance.pitch = 1.05;
+      // Calm, polite, soothing conversational pace (unhurried Indian rhythm)
+      utterance.rate = 0.94;
+      utterance.pitch = 1.03;
 
       let finished = false;
       const finish = () => {
