@@ -6,8 +6,9 @@ import { motion, useScroll, useTransform, AnimatePresence, useReducedMotion } fr
 import { 
   FiMenu, FiX, FiBriefcase, FiList, FiMessageSquare, 
   FiVideo, FiFileText, FiTrendingUp, FiArrowRight, FiCheckCircle,
-  FiSun, FiMoon, FiGithub, FiLinkedin
+  FiSun, FiMoon, FiGithub, FiLinkedin, FiChevronDown, FiHelpCircle
 } from 'react-icons/fi';
+import SEOHead from '../components/common/SEOHead';
 import Preloader from '../components/ui/Preloader';
 import MagneticButton from '../components/ui/MagneticButton';
 import TiltCard from '../components/ui/TiltCard';
@@ -354,6 +355,16 @@ const Landing = () => {
       {!preloaderComplete && <Preloader onComplete={() => setPreloaderComplete(true)} />}
       
       <div className="min-h-screen bg-bg-canvas text-text-primary font-body overflow-x-clip">
+        <SEOHead 
+          title="InterviewAce — AI Mock Interview & Technical Prep Platform"
+          description="Ace your software engineering interviews with InterviewAce. Practice realistic AI voice mock interviews, resume-tailored questions, and timed coding assessments."
+          keywords={[
+            'AI mock interview', 'technical interview prep', 'software engineer mock interview',
+            'voice interview practice', 'resume ATS analyzer', 'coding assessment simulator',
+            'React interview questions', 'system design mock interview'
+          ]}
+          canonicalUrl="https://interview-ai-ten-psi.vercel.app/"
+        />
       
       {/* ─── 1. Navigation Bar ─── */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 flex justify-center pt-6 px-4`}>
@@ -367,8 +378,10 @@ const Landing = () => {
 
           {/* Desktop Links */}
           <nav className="hidden md:flex items-center space-x-8">
-            <button onClick={() => scrollToSection('features')} className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">Features</button>
-            <button onClick={() => scrollToSection('how-it-works')} className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">How it works</button>
+            <button onClick={() => scrollToSection('features')} className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors cursor-pointer">Features</button>
+            <button onClick={() => scrollToSection('how-it-works')} className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors cursor-pointer">How it works</button>
+            <button onClick={() => scrollToSection('comparison')} className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors cursor-pointer">Comparison</button>
+            <button onClick={() => scrollToSection('faq')} className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors cursor-pointer">FAQ</button>
           </nav>
 
           {/* Auth & Theme Buttons */}
@@ -401,6 +414,7 @@ const Landing = () => {
         </div>
       </header>
 
+      <main id="main-content">
       {/* ─── 2. Hero Section ─── */}
       <section className="relative pt-40 pb-20 lg:pt-48 lg:pb-32 overflow-hidden isolate">
         
@@ -416,16 +430,16 @@ const Landing = () => {
               
               <div className="inline-flex items-center space-x-2 bg-bg-elevated border border-border-subtle rounded-full px-4 py-1.5 mb-8 shadow-sm">
                 <span className="flex h-2 w-2 rounded-full bg-accent-glow animate-pulse"></span>
-                <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">InterviewAce 2.0 is live</span>
+                <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">AI Technical Mock Interview Platform</span>
               </div>
               
               <h1 className="text-[40px] leading-[1.1] sm:text-5xl md:text-6xl lg:text-7xl font-bold font-display tracking-[-0.03em] text-text-primary mb-6">
-                Master the art of <br className="hidden sm:block" />
-                <span className="text-gradient">the interview.</span>
+                Ace Technical Interviews with <br className="hidden sm:block" />
+                <span className="text-gradient">Real-Time Voice AI.</span>
               </h1>
               
               <p className="text-lg text-text-secondary leading-[1.6] max-w-xl mx-auto lg:mx-0 mb-10">
-                Practice with hyper-realistic AI, get instant actionable feedback, and walk into your next interview with absolute confidence.
+                Experience hyper-realistic AI mock interviews tailored to your resume. Practice live voice technical rounds, solve timed coding assessments, and get instant feedback with score breakdowns.
               </p>
               
               <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto justify-center lg:justify-start">
@@ -675,6 +689,12 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* ─── 6. Comparison Section ─── */}
+      <ComparisonSection />
+
+      {/* ─── 7. FAQ Section ─── */}
+      <FAQSection />
+
       {/* ─── 8. Final CTA Band ─── */}
       <section className="py-24 bg-bg-surface relative overflow-hidden border-y border-border-subtle">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-accent-primary/20 via-bg-surface to-bg-surface"></div>
@@ -717,6 +737,7 @@ const Landing = () => {
           Start Free Interview
         </Link>
       </div>
+      </main>
 
       {/* ─── 9. Footer ─── */}
       <motion.footer 
@@ -753,7 +774,10 @@ const Landing = () => {
             <div className="flex flex-col">
               <h4 className="text-text-secondary font-mono text-sm tracking-wider uppercase mb-6">Product</h4>
               <ul className="space-y-4">
+                <li><a href="#features" className="text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 inline-block py-1">Features</a></li>
                 <li><a href="#how-it-works" className="text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 inline-block py-1">How it works</a></li>
+                <li><a href="#comparison" className="text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 inline-block py-1">Comparison</a></li>
+                <li><a href="#faq" className="text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 inline-block py-1">FAQ</a></li>
                 <li><Link to="/register" className="text-text-secondary hover:text-text-primary hover:-translate-y-[2px] transition-all duration-150 inline-block py-1">Start Free Interview</Link></li>
               </ul>
             </div>
@@ -791,6 +815,164 @@ const Landing = () => {
 };
 
 // ─── Reusable Micro-components ───
+
+const ComparisonSection = () => {
+  const comparisonRows = [
+    { feature: "Instant 24/7 Availability", interviewAce: true, leetcode: true, humanCoaching: false },
+    { feature: "Live Conversational Voice Simulation", interviewAce: true, leetcode: false, humanCoaching: true },
+    { feature: "Questions Tailored to Your Specific Resume", interviewAce: true, leetcode: false, humanCoaching: "Partial" },
+    { feature: "Adaptive Difficulty (Easy, Med, Hard)", interviewAce: true, leetcode: true, humanCoaching: "Varies" },
+    { feature: "System Design & Behavioral Evaluation", interviewAce: true, leetcode: false, humanCoaching: true },
+    { feature: "Instant Quantitative Rubric Scoring", interviewAce: true, leetcode: "Pass/Fail Only", humanCoaching: false },
+    { feature: "Cost per Session", interviewAce: "Free Tier Available", leetcode: "$35/mo Premium", humanCoaching: "$150-$250 / hr" },
+  ];
+
+  return (
+    <section id="comparison" className="py-24 bg-bg-canvas relative border-b border-border-subtle" aria-labelledby="comparison-heading">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <div className="inline-flex items-center space-x-2 bg-bg-elevated border border-border-subtle rounded-full px-4 py-1.5 mb-4 shadow-sm">
+            <span className="text-xs font-mono text-accent-glow uppercase tracking-widest">Platform Comparison</span>
+          </div>
+          <h2 id="comparison-heading" className="text-3xl md:text-5xl font-bold font-display text-text-primary mb-4">
+            Why Engineers Choose InterviewAce
+          </h2>
+          <p className="text-text-secondary text-lg">
+            Compare InterviewAce to traditional static coding platforms and expensive human coaching.
+          </p>
+        </div>
+
+        <div className="bg-bg-surface border border-border-subtle rounded-3xl overflow-hidden shadow-lg">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border-subtle bg-bg-elevated/50">
+                  <th className="py-5 px-6 font-semibold text-text-primary text-base">Preparation Feature</th>
+                  <th className="py-5 px-6 font-bold text-accent-glow text-base bg-accent-primary/10">InterviewAce AI</th>
+                  <th className="py-5 px-6 font-semibold text-text-secondary text-base">Static LeetCode</th>
+                  <th className="py-5 px-6 font-semibold text-text-secondary text-base">Human Coaching</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-subtle text-sm">
+                {comparisonRows.map((row, idx) => (
+                  <tr key={idx} className="hover:bg-bg-elevated/30 transition-colors">
+                    <td className="py-4 px-6 font-medium text-text-primary">{row.feature}</td>
+                    <td className="py-4 px-6 font-semibold text-text-primary bg-accent-primary/5">
+                      {typeof row.interviewAce === 'boolean' ? (
+                        row.interviewAce ? <span className="inline-flex items-center text-success gap-1.5"><FiCheckCircle size={16} /> Yes</span> : <span className="text-text-secondary">No</span>
+                      ) : (
+                        <span className="text-accent-primary font-bold">{row.interviewAce}</span>
+                      )}
+                    </td>
+                    <td className="py-4 px-6 text-text-secondary">
+                      {typeof row.leetcode === 'boolean' ? (
+                        row.leetcode ? <span className="inline-flex items-center text-success gap-1"><FiCheckCircle size={14} /> Yes</span> : <span className="text-text-secondary opacity-60">✕ No</span>
+                      ) : row.leetcode}
+                    </td>
+                    <td className="py-4 px-6 text-text-secondary">
+                      {typeof row.humanCoaching === 'boolean' ? (
+                        row.humanCoaching ? <span className="inline-flex items-center text-success gap-1"><FiCheckCircle size={14} /> Yes</span> : <span className="text-text-secondary opacity-60">✕ No</span>
+                      ) : row.humanCoaching}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const faqs = [
+  {
+    q: "How does an AI mock interview work on InterviewAce?",
+    a: "InterviewAce simulates a real hiring manager interview using Google Gemini 1.5 Flash. You can converse via real-time voice or interactive chat. The AI asks technical and behavioral questions, evaluates your spoken or written answers, asks follow-up drill-down questions, and provides an immediate score with suggestions for improvement."
+  },
+  {
+    q: "Can InterviewAce generate interview questions from my resume and job description?",
+    a: "Yes. When you upload your PDF resume along with your target job description, InterviewAce extracts your skill stack and identifies potential gaps. It then generates personalized, role-specific questions tailored specifically to your projects and experience."
+  },
+  {
+    q: "Is InterviewAce free to use for technical interview practice?",
+    a: "Yes, InterviewAce offers a free tier that allows candidates to sign up and immediately start practicing with full-length mock interviews, resume scans, and timed multiple-choice assessments."
+  },
+  {
+    q: "How realistic is the AI voice interview simulation?",
+    a: "InterviewAce pairs multimodal Gemini audio transcription with low-latency Speech-to-Text and Text-to-Speech synthesis (with native browser Web Speech API fallback) to deliver conversational, lifelike voice exchanges with sub-50ms processing latency."
+  },
+  {
+    q: "What tech stacks and developer roles are supported?",
+    a: "InterviewAce supports Frontend (React, Vue, TypeScript, Next.js), Backend (Node.js, Express, Python, Java, Go), Full Stack, DevOps, System Design, and Data Structures & Algorithms (DSA)."
+  },
+  {
+    q: "How does AI scoring compare to a human mock interviewer?",
+    a: "InterviewAce evaluates answers across four objective vectors: Technical Accuracy, Depth & Edge Cases, Communication Clarity, and Structure (e.g. STAR method). Candidates receive itemized rubrics and actionable model answers without the scheduling friction or high hourly cost of human coaching platforms."
+  }
+];
+
+const FAQSection = () => {
+  const [openIdx, setOpenIdx] = useState(null);
+
+  const toggle = (idx) => {
+    setOpenIdx(openIdx === idx ? null : idx);
+  };
+
+  return (
+    <section id="faq" aria-labelledby="faq-heading" className="py-24 bg-bg-surface border-b border-border-subtle">
+      <div className="max-w-4xl mx-auto px-6">
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center space-x-2 bg-bg-elevated border border-border-subtle rounded-full px-4 py-1.5 mb-4 shadow-sm">
+            <FiHelpCircle className="text-accent-primary" size={14} />
+            <span className="text-xs font-mono text-accent-glow uppercase tracking-widest">Common Inquiries</span>
+          </div>
+          <h2 id="faq-heading" className="text-3xl md:text-5xl font-bold font-display text-text-primary mb-4">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-text-secondary text-lg">
+            Everything you need to know about AI mock interviews, Shristi voice sessions, and resume ATS analysis.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {faqs.map((faq, idx) => {
+            const isOpen = openIdx === idx;
+            return (
+              <div 
+                key={idx} 
+                className="border border-border-subtle rounded-2xl bg-bg-elevated overflow-hidden transition-all duration-200 hover:border-accent-primary/40"
+              >
+                <button
+                  type="button"
+                  onClick={() => toggle(idx)}
+                  aria-expanded={isOpen}
+                  aria-controls={`faq-answer-${idx}`}
+                  className="w-full text-left p-6 font-display font-semibold text-lg text-text-primary flex justify-between items-center gap-4 hover:text-accent-glow transition-colors cursor-pointer"
+                >
+                  <span>{faq.q}</span>
+                  <FiChevronDown 
+                    className={`shrink-0 text-text-secondary transition-transform duration-200 ${isOpen ? 'rotate-180 text-accent-primary' : ''}`} 
+                    size={20} 
+                  />
+                </button>
+                {isOpen && (
+                  <div 
+                    id={`faq-answer-${idx}`} 
+                    role="region" 
+                    className="px-6 pb-6 text-text-secondary leading-relaxed border-t border-border-subtle/40 pt-4"
+                  >
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+};
 
 const TechArchitecture = () => {
   const [activeNode, setActiveNode] = useState(null);

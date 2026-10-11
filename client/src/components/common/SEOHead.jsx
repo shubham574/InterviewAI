@@ -1,26 +1,103 @@
 import { useEffect } from 'react';
 
-const SEOHead = ({ title, description }) => {
+/**
+ * SEOHead - Dynamic Search Engine Optimization & Social Metadata Manager
+ * Manages document title, meta descriptions, canonical URLs, Open Graph,
+ * Twitter Cards, robots directives, and dynamic JSON-LD structured data schemas.
+ */
+const SEOHead = ({
+  title,
+  description,
+  keywords,
+  canonicalUrl,
+  ogTitle,
+  ogDescription,
+  ogImage,
+  ogType = 'website',
+  twitterCard = 'summary_large_image',
+  robots = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+  structuredData,
+}) => {
   useEffect(() => {
-    // Set Document Title
-    const baseTitle = 'InterviewAce AI';
-    document.title = title ? `${title} | ${baseTitle}` : baseTitle;
+    const baseTitle = 'InterviewAce — AI Technical Interview Preparation Platform';
+    const finalTitle = title 
+      ? (title.includes('InterviewAce') ? title : `${title} | ${baseTitle}`)
+      : baseTitle;
+    document.title = finalTitle;
 
-    // Set Meta Description
-    if (description) {
-      let metaDescription = document.querySelector('meta[name="description"]');
-      if (metaDescription) {
-        metaDescription.setAttribute('content', description);
+    const setMeta = (name, content, isProperty = false) => {
+      if (!content) return;
+      const attr = isProperty ? 'property' : 'name';
+      let el = document.querySelector(`meta[${attr}="${name}"]`);
+      if (el) {
+        el.setAttribute('content', content);
       } else {
-        metaDescription = document.createElement('meta');
-        metaDescription.name = 'description';
-        metaDescription.content = description;
-        document.head.appendChild(metaDescription);
+        el = document.createElement('meta');
+        el.setAttribute(attr, name);
+        el.setAttribute('content', content);
+        document.head.appendChild(el);
       }
-    }
-  }, [title, description]);
+    };
 
-  return null; // This component doesn't render anything
+    const finalDescription = description || 
+      'Practice real-time technical mock interviews with Shristi, your AI interviewer. Master coding assessments, system design, behavioral questions, and resume ATS analysis with instant actionable AI feedback.';
+    setMeta('description', finalDescription);
+
+    if (keywords) {
+      setMeta('keywords', Array.isArray(keywords) ? keywords.join(', ') : keywords);
+    }
+    setMeta('robots', robots);
+
+    // Canonical link
+    const currentUrl = typeof window !== 'undefined' ? window.location.href.split('?')[0] : 'https://interview-ai-ten-psi.vercel.app/';
+    const href = canonicalUrl || currentUrl;
+    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (canonicalLink) {
+      canonicalLink.setAttribute('href', href);
+    } else {
+      canonicalLink = document.createElement('link');
+      canonicalLink.setAttribute('rel', 'canonical');
+      canonicalLink.setAttribute('href', href);
+      document.head.appendChild(canonicalLink);
+    }
+
+    // Open Graph
+    const finalOgTitle = ogTitle || finalTitle;
+    const finalOgDesc = ogDescription || finalDescription;
+    const finalOgImage = ogImage || 'https://interview-ai-ten-psi.vercel.app/og-image.png';
+
+    setMeta('og:title', finalOgTitle, true);
+    setMeta('og:description', finalOgDesc, true);
+    setMeta('og:type', ogType, true);
+    setMeta('og:url', href, true);
+    setMeta('og:image', finalOgImage, true);
+    setMeta('og:site_name', 'InterviewAce', true);
+    setMeta('og:locale', 'en_US', true);
+
+    // Twitter Card
+    setMeta('twitter:card', twitterCard);
+    setMeta('twitter:title', finalOgTitle);
+    setMeta('twitter:description', finalOgDesc);
+    setMeta('twitter:image', finalOgImage);
+
+    // Dynamic JSON-LD structured data
+    let scriptTag = null;
+    if (structuredData) {
+      scriptTag = document.createElement('script');
+      scriptTag.type = 'application/ld+json';
+      scriptTag.id = 'page-structured-data';
+      scriptTag.text = JSON.stringify(structuredData);
+      document.head.appendChild(scriptTag);
+    }
+
+    return () => {
+      if (scriptTag && scriptTag.parentNode) {
+        scriptTag.parentNode.removeChild(scriptTag);
+      }
+    };
+  }, [title, description, keywords, canonicalUrl, ogTitle, ogDescription, ogImage, ogType, twitterCard, robots, structuredData]);
+
+  return null;
 };
 
 export default SEOHead;

@@ -1,15 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset 
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <!-- Primary Landing Page -->
   <url>
     <loc>https://interview-ai-ten-psi.vercel.app/</loc>
-    <lastmod>2026-07-09</lastmod>
-    <changefreq>weekly</changefreq>
+    <lastmod>2026-10-12</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://interview-ai-ten-psi.vercel.app/og-image.png</image:loc>
+      <image:title>InterviewAce — AI Technical Interview Preparation Platform</image:title>
+      <image:caption>Practice real-time technical mock interviews with AI interviewer Shristi</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://interview-ai-ten-psi.vercel.app/landing-preview.png</image:loc>
+      <image:title>InterviewAce Platform Interface</image:title>
+      <image:caption>Interactive technical mock interview and MCQ assessment test generation</image:caption>
+    </image:image>
   </url>
+
+  <!-- User Onboarding / Registration -->
   <url>
-    <loc>https://interview-ai-ten-psi.vercel.app/dashboard</loc>
-    <lastmod>2026-07-09</lastmod>
+    <loc>https://interview-ai-ten-psi.vercel.app/register</loc>
+    <lastmod>2026-10-12</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- User Authentication / Login -->
+  <url>
+    <loc>https://interview-ai-ten-psi.vercel.app/login</loc>
+    <lastmod>2026-10-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
 </urlset>
