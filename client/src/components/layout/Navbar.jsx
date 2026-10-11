@@ -15,10 +15,15 @@ const Navbar = ({ toggleSidebar, sidebarOpen }) => {
 
   const getPageTitle = (path) => {
     if (path.includes('dashboard')) return 'Dashboard';
-    if (path.includes('mock-interview')) return 'New Interview';
-    if (path.includes('live-interview')) return 'Live Session';
+    if (path.includes('job-analysis')) return 'Job Analysis & Prep Plan';
+    if (path.includes('resume-analyzer')) return 'Resume Match';
+    if (path.includes('mcq-generator')) return 'MCQ Generator';
+    if (path.includes('assessment')) return 'Assessment Test';
+    if (path.includes('interview-questions')) return 'Interview Questions';
+    if (path.includes('mock-interview')) return 'Mock Interview';
+    if (path.includes('live-interview')) return 'Live Interview with Shristi';
     if (path.includes('history')) return 'History & Progress';
-    if (path.includes('profile')) return 'Settings';
+    if (path.includes('profile')) return 'Account Settings';
     return 'Dashboard';
   };
 
@@ -28,7 +33,8 @@ const Navbar = ({ toggleSidebar, sidebarOpen }) => {
         {isSignedIn && (
           <button
             onClick={toggleSidebar}
-            className="mr-4 p-2 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-accent-primary lg:hidden transition-colors"
+            className="mr-3 p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-accent-primary lg:hidden transition-colors"
+            aria-label="Toggle navigation"
           >
             {sidebarOpen ? <FiX size={20} /> : <FiMenu size={20} />}
           </button>
@@ -38,28 +44,35 @@ const Navbar = ({ toggleSidebar, sidebarOpen }) => {
           {getPageTitle(location.pathname)}
         </h1>
         
-        <Link to="/" className="flex items-center space-x-2 lg:hidden">
-          <span className="text-xl font-bold tracking-tight text-text-primary">
+        <Link to="/" className="flex items-center space-x-2 sm:hidden">
+          <span className="text-lg font-bold tracking-tight text-text-primary">
             InterviewAce
           </span>
         </Link>
       </div>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-3 sm:space-x-4">
+        {/* Status Indicator */}
+        <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-bg-canvas border border-border-subtle">
+          <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+          <span className="text-xs text-text-secondary font-medium">All systems ready</span>
+        </div>
+
         {/* Theme Toggle */}
         <button 
           onClick={toggleTheme} 
-          className="p-2 rounded-full hover:bg-bg-elevated transition-colors text-text-secondary hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
+          className="p-2 rounded-xl bg-bg-canvas border border-border-subtle hover:bg-surface-hover transition-colors text-text-secondary hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
           aria-label="Toggle theme"
         >
           {theme === 'light' ? <FiMoon size={18} /> : <FiSun size={18} />}
         </button>
 
-        {/* Status Indicator (Mock for now, can be wired to socket later) */}
-        <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-bg-canvas border border-border-subtle">
-          <span className="w-2 h-2 rounded-full bg-success"></span>
-          <span className="text-xs text-text-secondary font-medium">All systems operational</span>
-        </div>
+        {/* User Button */}
+        {isSignedIn && (
+          <div className="flex items-center">
+            <UserButton afterSignOutUrl="/" appearance={{ elements: { userButtonAvatarBox: 'w-8 h-8' } }} />
+          </div>
+        )}
       </div>
     </nav>
   );

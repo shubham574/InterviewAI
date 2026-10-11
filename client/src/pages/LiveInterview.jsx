@@ -103,6 +103,11 @@ const useDeepgramRecorder = ({ onTranscriptComplete, getToken }) => {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [error, setError] = useState(null);
 
+  const onTranscriptRef = useRef(onTranscriptComplete);
+  useEffect(() => {
+    onTranscriptRef.current = onTranscriptComplete;
+  }, [onTranscriptComplete]);
+
   const startRecording = useCallback(async () => {
     setError(null);
     try {
@@ -113,39 +118,65 @@ const useDeepgramRecorder = ({ onTranscriptComplete, getToken }) => {
         : MediaRecorder.isTypeSupported('audio/webm')
         ? 'audio/webm'
         : 'audio/ogg';
+      const cleanType = mimeType.split(';')[0] || 'audio/webm';
       const recorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
       recorder.onstop = async () => {
         streamRef.current?.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(chunksRef.current, { type: mimeType });
-        if (blob.size < 1000) { setIsTranscribing(false); return; }
+        const blob = new Blob(chunksRef.current, { type: cleanType });
+        if (!blob || blob.size < 50) {
+          toast('No audio detected. Please speak clearly into your mic.', { icon: '🎙️' });
+          setIsTranscribing(false);
+          return;
+        }
+
         setIsTranscribing(true);
         try {
           const token = await getToken();
           const formData = new FormData();
           formData.append('audio', blob, 'recording.webm');
           const { data } = await api.post(API.TRANSCRIBE, formData, {
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+            headers: { Authorization: `Bearer ${token}` },
           });
-          if (data.transcript) onTranscriptComplete(data.transcript);
-          else toast('No speech detected. Please try again.', { icon: '🎙️' });
+
+          if (data?.transcript?.trim()) {
+            onTranscriptRef.current?.(data.transcript.trim());
+          } else {
+            toast('No clear speech detected. Please speak again or type your answer.', { icon: '🎙️' });
+          }
         } catch (err) {
-          toast.error(err.response?.data?.error || 'Transcription failed. Please try again.');
-        } finally { setIsTranscribing(false); }
+          console.error('Transcription error:', err);
+          toast.error(err.response?.data?.error || 'Transcription failed. You can also switch to typing.');
+        } finally {
+          setIsTranscribing(false);
+        }
       };
-      recorder.start();
+
+      // Collect audio slices in 250ms chunks
+      recorder.start(250);
       setIsRecording(true);
     } catch (err) {
-      if (err.name === 'NotAllowedError') setError('Microphone access denied.');
+      if (err.name === 'NotAllowedError') setError('Microphone access denied. Please allow microphone permissions.');
       else setError(`Could not start recording: ${err.message}`);
     }
-  }, [getToken, onTranscriptComplete]);
+  }, [getToken]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+      try {
+        if (mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.requestData();
+        }
+        mediaRecorderRef.current.stop();
+      } catch (e) {
+        console.warn('Error stopping MediaRecorder:', e);
+      }
       setIsRecording(false);
     }
   }, [isRecording]);
@@ -154,7 +185,7 @@ const useDeepgramRecorder = ({ onTranscriptComplete, getToken }) => {
     if (isRecording) stopRecording(); else startRecording();
   }, [isRecording, startRecording, stopRecording]);
 
-  return { isRecording, isTranscribing, error, toggleRecording };
+  return { isRecording, isTranscribing, error, toggleRecording, stopRecording };
 };
 
 // ─── Shristi Avatar ────────────────────────────────────────────────────────────
@@ -249,6 +280,7 @@ const LiveInterview = () => {
   const [jobRole, setJobRole] = useState('');
   const [jobDescription, setJobDescription] = useState('');
   const [totalQuestions, setTotalQuestions] = useState(5);
+  const [difficulty, setDifficulty] = useState('medium');
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // ── Session state
@@ -258,6 +290,11 @@ const LiveInterview = () => {
   const [attempt, setAttempt] = useState(1);
   const [previousAnswer, setPreviousAnswer] = useState(null);
   
+  // ── Flow & Mode State
+  const [isIntroPhase, setIsIntroPhase] = useState(true);
+  const [isTextMode, setIsTextMode] = useState(false);
+  const [typedAnswer, setTypedAnswer] = useState('');
+
   // ── Chat State
   const [chatHistory, setChatHistory] = useState([]);
   const [shristiMessage, setShristiMessage] = useState('');
@@ -288,6 +325,7 @@ const LiveInterview = () => {
     if (document.fullscreenElement) {
       document.exitFullscreen();
     }
+    stopSpeaking();
     navigate('/dashboard');
   };
 
@@ -329,7 +367,7 @@ const LiveInterview = () => {
       setIsThinking(false);
 
       if (result.action === 'retry') {
-        // Re-ask same question
+        // Re-ask same question with Shristi's guidance
         setPreviousAnswer(answerText);
         setAttempt((a) => a + 1);
         setShristiMessage(result.shristiResponse);
@@ -341,7 +379,7 @@ const LiveInterview = () => {
           setCurrentQIndex(nextIndex);
           setAttempt(1);
           setPreviousAnswer(null);
-          setShristiMessage(result.shristiResponse + ' ' + nextQ.question);
+          setShristiMessage(`${result.shristiResponse}\n\nQuestion ${nextIndex + 1}: ${nextQ.question}`);
         } else {
           // All questions done — complete interview
           setShristiMessage(result.shristiResponse);
@@ -370,42 +408,88 @@ const LiveInterview = () => {
     getToken,
   });
 
-  // ── Speak Shristi's message whenever it changes and append to chat
+  // ── Present First Question ONLY after Intro finishes
+  const presentFirstQuestion = useCallback((targetSession) => {
+    const s = targetSession || session;
+    if (!s || !s.questions || s.questions.length === 0) return;
+    setIsIntroPhase(false);
+
+    const firstQ = s.questions[0];
+    const q1Text = `Question 1: ${firstQ.question}`;
+
+    setChatHistory(prev => {
+      if (prev.some(m => m.id === 'q-0')) return prev;
+      return [...prev, { id: 'q-0', sender: 'shristi', text: q1Text }];
+    });
+
+    speak(q1Text, () => {
+      setShristiHasSpoken(true);
+      if (!isMuted && !isTextMode) {
+        toggleRecording();
+      }
+    });
+  }, [session, isMuted, isTextMode, speak, toggleRecording]);
+
+  // ── Skip Intro action
+  const handleSkipIntro = useCallback(() => {
+    stopSpeaking();
+    presentFirstQuestion(session);
+  }, [stopSpeaking, presentFirstQuestion, session]);
+
+  // ── Step 1: Shristi Intro when interview screen loads
   useEffect(() => {
-    if (shristiMessage && screen === SCREEN.INTERVIEW) {
+    if (screen === SCREEN.INTERVIEW && session && isIntroPhase && chatHistory.length === 0) {
+      const introGreeting = `Hello ${userName}! I'm Shristi, your AI interviewer today. We'll be going through ${session.totalQuestions} ${session.difficulty || difficulty} questions tailored to your ${session.jobRole} role. Listen carefully to each question, and answer naturally. Let's get started!`;
+
+      setChatHistory([{ id: 'intro', sender: 'shristi', text: introGreeting }]);
+
+      speak(introGreeting, () => {
+        // ONLY AFTER Shristi finishes her intro, show and speak Question 1!
+        setTimeout(() => {
+          presentFirstQuestion(session);
+        }, 700);
+      });
+    }
+  }, [screen, session, isIntroPhase, chatHistory.length, userName, difficulty, speak, presentFirstQuestion]);
+
+  // ── Speak Shristi's subsequent responses in interview
+  useEffect(() => {
+    if (shristiMessage && screen === SCREEN.INTERVIEW && !isIntroPhase) {
       setChatHistory(prev => [...prev, { id: Date.now().toString(), sender: 'shristi', text: shristiMessage }]);
       speak(shristiMessage, () => {
          setShristiHasSpoken(true);
-         // Automatically start listening when Shristi finishes
-         if (!isMuted) {
+         // Automatically start listening when Shristi finishes speaking question
+         if (!isMuted && !isTextMode) {
            toggleRecording();
          }
       });
     }
+  }, [shristiMessage, screen, isIntroPhase, isMuted, isTextMode, speak, toggleRecording]);
 
-  }, [shristiMessage]);
-
-  // ── Greet user when interview starts
-  useEffect(() => {
-    if (screen === SCREEN.INTERVIEW && session && !shristiMessage) {
-      const greeting = `Hello ${userName}! I'm Shristi, your AI interviewer today. We'll be going through ${session.totalQuestions} questions tailored to the ${session.jobRole} role. Let's start with the first question. ${session.questions[0]?.question}`;
-      setShristiMessage(greeting);
+  // ── Submit typed answer
+  const handleSendTypedAnswer = async (e) => {
+    e?.preventDefault();
+    if (!typedAnswer || typedAnswer.trim().length < 2) {
+      toast.error('Please enter a valid answer.');
+      return;
     }
-
-  }, [screen, session]);
+    const ans = typedAnswer.trim();
+    setTypedAnswer('');
+    setChatHistory(prev => [...prev, { id: Date.now().toString(), sender: 'user', text: ans }]);
+    await handleSubmitAnswer(ans);
+  };
 
   // ─── Start interview
   const handleStart = async (e) => {
     e.preventDefault();
     if (!userName || !jobRole || !jobDescription) return;
     
-    // Request Microhpone permission first
+    // Request Microphone permission first
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach(track => track.stop());
     } catch (err) {
-      toast.error("Microphone permission is required to start the live interview.");
-      return;
+      toast.error("Microphone permission recommended for voice mode. You can also type answers.");
     }
 
     // Go Fullscreen
@@ -421,10 +505,16 @@ const LiveInterview = () => {
       if (geminiKey) headers['x-gemini-api-key'] = geminiKey;
       const { data } = await api.post(
         API.LIVE_INTERVIEW.START,
-        { userName, jobRole, jobDescription, totalQuestions: Number(totalQuestions) },
+        { userName, jobRole, jobDescription, totalQuestions: Number(totalQuestions), difficulty },
         { headers }
       );
       setSession(data.data);
+      setIsIntroPhase(true);
+      setChatHistory([]);
+      setCurrentQIndex(0);
+      setAttempt(1);
+      setPreviousAnswer(null);
+      setShristiMessage('');
       setScreen(SCREEN.INTERVIEW);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to start interview. Please try again.');
@@ -472,8 +562,13 @@ const LiveInterview = () => {
 
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-text-primary">Interview Complete! 🎉</h1>
-            <p className="text-text-muted mt-1">Here's how you did, {name}</p>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-bold text-text-primary">Interview Complete! 🎉</h1>
+              <Badge variant={finalSession.difficulty === 'hard' ? 'error' : finalSession.difficulty === 'easy' ? 'success' : 'primary'} className="capitalize">
+                {finalSession.difficulty || difficulty} Level
+              </Badge>
+            </div>
+            <p className="text-text-muted mt-1">Role: <strong className="text-text-primary">{role}</strong> &bull; Candidate: {name}</p>
           </div>
           <Button variant="secondary" onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
         </div>
@@ -633,14 +728,19 @@ const LiveInterview = () => {
         <div className="mb-4 flex-shrink-0">
           <div className="flex justify-between items-center mb-2">
             <div>
-              <h2 className="text-lg font-bold text-text-primary">{session.jobRole} Interview</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-text-primary">{session.jobRole} Interview</h2>
+                <Badge variant={session.difficulty === 'hard' ? 'error' : session.difficulty === 'easy' ? 'success' : 'primary'} className="capitalize">
+                  {session.difficulty || difficulty}
+                </Badge>
+              </div>
               <p className="text-xs text-text-muted">with {userName}</p>
             </div>
             <div className="flex items-center gap-3">
               <button
                 aria-label={isMuted ? 'Unmute Shristi' : 'Mute Shristi'}
                 onClick={toggleMute}
-                className="flex items-center justify-center text-text-muted hover:text-text-primary transition-colors bg-surface-hover border border-border rounded-lg p-2"
+                className="flex items-center justify-center text-text-muted hover:text-text-primary transition-colors bg-surface-hover border border-border rounded-lg p-2 cursor-pointer"
                 title={isMuted ? 'Unmute Shristi' : 'Mute Shristi'}
               >
                 {isMuted ? <FiVolumeX className="w-4 h-4" /> : <FiVolume2 className="w-4 h-4" />}
@@ -648,7 +748,7 @@ const LiveInterview = () => {
               <button
                 aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
                 onClick={toggleFullscreen}
-                className="flex items-center justify-center text-text-muted hover:text-text-primary transition-colors bg-surface-hover border border-border rounded-lg p-2 hidden sm:flex"
+                className="flex items-center justify-center text-text-muted hover:text-text-primary transition-colors bg-surface-hover border border-border rounded-lg p-2 hidden sm:flex cursor-pointer"
                 title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
               >
                 {isFullscreen ? <FiMinimize className="w-4 h-4" /> : <FiMaximize className="w-4 h-4" />}
@@ -656,7 +756,7 @@ const LiveInterview = () => {
               <button
                 aria-label="Exit Interview"
                 onClick={exitInterview}
-                className="flex items-center justify-center text-error hover:bg-error/10 transition-colors bg-surface-hover border border-border rounded-lg p-2 ml-2"
+                className="flex items-center justify-center text-error hover:bg-error/10 transition-colors bg-surface-hover border border-border rounded-lg p-2 ml-2 cursor-pointer"
                 title="Exit Interview"
               >
                 <FiX className="w-4 h-4" />
@@ -691,7 +791,23 @@ const LiveInterview = () => {
           <Card className="md:col-span-2 flex flex-col p-0 overflow-hidden bg-bg-canvas border-border-subtle">
              
              {/* WhatsApp Style Chat Area */}
-             <div className="flex-1 overflow-y-auto p-6 space-y-5 scrollbar-thin">
+             <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin">
+                {isIntroPhase && (
+                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-accent-primary/10 border border-accent-primary/20 text-xs text-accent-primary animate-fade-in shadow-sm">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-accent-primary animate-ping" />
+                      👩‍💼 Shristi is introducing the interview...
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleSkipIntro}
+                      className="px-3 py-1 rounded-lg bg-accent-primary text-white font-semibold hover:bg-accent-glow transition-all cursor-pointer text-xs"
+                    >
+                      Skip to First Question &rarr;
+                    </button>
+                  </div>
+                )}
+
                 {chatHistory.map(msg => (
                    <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm border ${msg.sender === 'user' ? 'bg-accent-primary border-accent-glow text-white rounded-tr-none' : 'bg-bg-surface border-border-subtle text-text-primary rounded-tl-none'}`}>
@@ -704,7 +820,7 @@ const LiveInterview = () => {
                    <div className="flex justify-start">
                       <div className="bg-bg-surface border border-border-subtle p-4 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-3">
                          <FiLoader className="animate-spin text-accent-primary" />
-                         <span className="text-sm text-text-secondary italic">Shristi is thinking...</span>
+                         <span className="text-sm text-text-secondary italic">Shristi is evaluating your answer...</span>
                       </div>
                    </div>
                 )}
@@ -713,7 +829,7 @@ const LiveInterview = () => {
                    <div className="flex justify-end">
                       <div className="bg-accent-primary/80 border border-accent-glow/50 text-white p-4 rounded-2xl rounded-tr-none flex items-center gap-3 shadow-sm">
                          <FiLoader className="animate-spin" />
-                         <span className="text-sm italic">Transcribing...</span>
+                         <span className="text-sm italic">Transcribing your speech...</span>
                       </div>
                    </div>
                 )}
@@ -721,32 +837,95 @@ const LiveInterview = () => {
              </div>
 
              {/* Controls */}
-             <div className="p-5 bg-bg-surface border-t border-border-subtle flex-shrink-0 flex flex-col items-center justify-center gap-3">
+             <div className="p-4 sm:p-5 bg-bg-surface border-t border-border-subtle flex-shrink-0 flex flex-col items-center justify-center gap-3">
                 {recorderError && (
-                  <div className="flex items-center gap-2 text-xs text-danger bg-danger/10 px-3 py-1.5 rounded-lg mb-2">
+                  <div className="flex items-center gap-2 text-xs text-danger bg-danger/10 px-3 py-1.5 rounded-lg mb-1">
                     <FiAlertCircle /> {recorderError}
                   </div>
                 )}
 
-                {isRecording ? (
-                   <button 
-                     onClick={toggleRecording} 
-                     className="flex items-center gap-2 bg-danger text-white px-8 py-3.5 rounded-full font-bold hover:bg-danger/90 transition-all animate-pulse shadow-lg shadow-danger/30"
-                   >
-                      <FiStopCircle className="w-5 h-5" /> Stop & Submit Answer
-                   </button>
+                {isIntroPhase ? (
+                   <div className="flex flex-col sm:flex-row items-center gap-3 w-full justify-center py-2">
+                     <p className="text-xs text-text-muted font-medium flex items-center gap-2">
+                       <span className="w-2 h-2 rounded-full bg-accent-primary animate-pulse" />
+                       Listening to Shristi's intro. First question will display right after.
+                     </p>
+                     <button
+                       type="button"
+                       onClick={handleSkipIntro}
+                       className="text-xs text-accent-primary hover:underline font-bold cursor-pointer"
+                     >
+                       Skip Intro to Begin
+                     </button>
+                   </div>
+                ) : isTextMode ? (
+                   <form onSubmit={handleSendTypedAnswer} className="w-full flex flex-col gap-2">
+                     <div className="flex gap-2">
+                       <textarea
+                         value={typedAnswer}
+                         onChange={(e) => setTypedAnswer(e.target.value)}
+                         placeholder="Type your answer here..."
+                         rows={2}
+                         disabled={isSubmitting || isThinking}
+                         className="flex-1 px-4 py-2.5 rounded-xl border border-border-subtle bg-bg-canvas text-text-primary text-sm focus:border-accent-primary focus:outline-none resize-none"
+                         onKeyDown={(e) => {
+                           if (e.key === 'Enter' && !e.shiftKey) {
+                             e.preventDefault();
+                             handleSendTypedAnswer();
+                           }
+                         }}
+                       />
+                       <button
+                         type="submit"
+                         disabled={isSubmitting || isThinking || !typedAnswer.trim()}
+                         className="bg-accent-primary text-white px-5 rounded-xl font-bold hover:bg-accent-glow transition-all disabled:opacity-50 cursor-pointer text-sm shrink-0 flex items-center justify-center"
+                       >
+                         {isSubmitting ? <FiLoader className="animate-spin" /> : 'Send'}
+                       </button>
+                     </div>
+                     <div className="flex justify-between items-center text-xs text-text-muted">
+                       <span>Press Enter to submit, Shift+Enter for new line</span>
+                       <button
+                         type="button"
+                         onClick={() => setIsTextMode(false)}
+                         className="text-accent-primary hover:underline cursor-pointer font-medium"
+                       >
+                         Switch to Voice Mode 🎙️
+                       </button>
+                     </div>
+                   </form>
                 ) : (
-                   <button 
-                     onClick={toggleRecording} 
-                     disabled={isSpeaking || isSubmitting || isTranscribing} 
-                     className="flex items-center gap-2 bg-accent-primary text-white px-8 py-3.5 rounded-full font-bold hover:bg-accent-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-accent-primary/20"
-                   >
-                      <FiMic className="w-5 h-5" /> {isSpeaking ? "Wait for Shristi..." : "Tap to Answer"}
-                   </button>
+                   <div className="flex flex-col items-center gap-2.5 w-full">
+                     {isRecording ? (
+                        <button 
+                          type="button"
+                          onClick={toggleRecording} 
+                          className="flex items-center gap-2 bg-danger text-white px-8 py-3.5 rounded-full font-bold hover:bg-danger/90 transition-all animate-pulse shadow-lg shadow-danger/30 cursor-pointer"
+                        >
+                           <FiStopCircle className="w-5 h-5" /> Stop & Submit Answer
+                        </button>
+                     ) : (
+                        <button 
+                          type="button"
+                          onClick={toggleRecording} 
+                          disabled={isSpeaking || isSubmitting || isTranscribing} 
+                          className="flex items-center gap-2 bg-accent-primary text-white px-8 py-3.5 rounded-full font-bold hover:bg-accent-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-accent-primary/20 cursor-pointer"
+                        >
+                           <FiMic className="w-5 h-5" /> {isSpeaking ? "Wait for Shristi..." : "Tap to Answer"}
+                        </button>
+                     )}
+                     <div className="flex items-center justify-between w-full max-w-lg px-2 text-xs text-text-muted">
+                       <span>{isRecording ? "Listening to your answer..." : "Answers are transcribed and submitted automatically."}</span>
+                       <button
+                         type="button"
+                         onClick={() => setIsTextMode(true)}
+                         className="text-accent-primary hover:underline font-semibold cursor-pointer ml-3 shrink-0"
+                       >
+                         Type Answer Instead
+                       </button>
+                     </div>
+                   </div>
                 )}
-                <p className="text-xs text-text-muted font-medium">
-                   {isRecording ? "Listening to your answer..." : "Answers are automatically transcribed and submitted."}
-                </p>
              </div>
           </Card>
         </div>
@@ -801,6 +980,33 @@ const LiveInterview = () => {
                 className="w-full px-4 py-3 rounded-xl border-2 border-border-subtle bg-bg-surface text-text-primary placeholder-text-secondary resize-none transition-all duration-200 outline-none text-sm focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/20"
               />
             </div>
+            {/* Difficulty Level Selector */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-text-primary">
+                Difficulty Level <span className="text-danger">*</span>
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { id: 'easy', label: 'Easy', tag: 'Concepts', color: 'border-success/40 bg-success/10 text-success' },
+                  { id: 'medium', label: 'Medium', tag: 'Practical', color: 'border-accent-primary bg-accent-primary/10 text-accent-primary' },
+                  { id: 'hard', label: 'Hard', tag: 'Advanced', color: 'border-danger/40 bg-danger/10 text-danger' },
+                ].map((d) => (
+                  <div
+                    key={d.id}
+                    onClick={() => setDifficulty(d.id)}
+                    className={`cursor-pointer text-center p-3 rounded-xl border-2 transition-all flex flex-col items-center justify-center ${
+                      difficulty === d.id
+                        ? `${d.color} font-bold shadow-sm ring-1`
+                        : 'border-border-subtle bg-bg-canvas text-text-secondary hover:border-text-secondary/50'
+                    }`}
+                  >
+                    <span className="capitalize text-sm font-bold">{d.label}</span>
+                    <span className="text-[10px] opacity-80 mt-0.5">{d.tag}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-text-primary">
                 Number of Questions <span className="text-danger">*</span>

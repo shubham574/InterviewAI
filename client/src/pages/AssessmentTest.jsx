@@ -399,25 +399,29 @@ const AssessmentTest = () => {
             {currentQuestion.question}
           </h2>
 
-          <div className="space-y-4">
+          <div className="space-y-3.5">
             {currentQuestion.options.map((opt, oIndex) => {
               const isSelected = selectedAnswers[currentQuestionIdx] === oIndex;
               return (
                 <button
                   key={oIndex}
+                  type="button"
                   onClick={() => handleSelectOption(currentQuestionIdx, oIndex)}
-                  className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center ${
+                  className={`w-full text-left p-4 sm:p-5 rounded-2xl border-2 transition-all duration-200 flex items-center cursor-pointer select-none active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-accent-primary/50 ${
                     isSelected 
-                      ? 'border-primary bg-primary/10 text-text-primary' 
-                      : 'border-border bg-surface hover:border-primary/50 text-text-secondary hover:bg-surface-hover'
+                      ? 'border-accent-primary bg-accent-primary/10 text-text-primary shadow-sm ring-1 ring-accent-primary' 
+                      : 'border-border-subtle bg-bg-surface hover:border-accent-primary/40 text-text-secondary hover:text-text-primary hover:bg-surface-hover'
                   }`}
                 >
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 ${
-                    isSelected ? 'border-primary' : 'border-text-muted'
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 transition-colors ${
+                    isSelected ? 'border-accent-primary bg-accent-primary/20' : 'border-border-subtle'
                   }`}>
-                    {isSelected && <div className="w-3 h-3 rounded-full bg-primary" />}
+                    {isSelected && <div className="w-3 h-3 rounded-full bg-accent-primary animate-scale-in" />}
                   </div>
-                  <span className="text-lg">{opt}</span>
+                  <span className="text-base sm:text-lg font-medium leading-relaxed flex-1">
+                    <span className="text-text-muted font-mono mr-2">{String.fromCharCode(65 + oIndex)}.</span>
+                    {opt}
+                  </span>
                 </button>
               );
             })}

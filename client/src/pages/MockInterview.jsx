@@ -46,21 +46,22 @@ const useDeepgramRecorder = ({ onTranscript, getToken }) => {
         ? 'audio/webm'
         : 'audio/ogg';
 
+      const cleanType = mimeType.split(';')[0] || 'audio/webm';
       const recorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
 
       recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
       };
 
       recorder.onstop = async () => {
-        // Release mic
+        // Release mic tracks
         streamRef.current?.getTracks().forEach((t) => t.stop());
 
-        const blob = new Blob(chunksRef.current, { type: mimeType });
-        if (blob.size < 1000) {
-          // Too small — probably silence
+        const blob = new Blob(chunksRef.current, { type: cleanType });
+        if (!blob || blob.size < 50) {
+          toast('No audio captured. Please speak clearly into your mic.', { icon: '🎙️' });
           setIsTranscribing(false);
           return;
         }
@@ -71,29 +72,30 @@ const useDeepgramRecorder = ({ onTranscript, getToken }) => {
           const formData = new FormData();
           formData.append('audio', blob, 'recording.webm');
 
+          // Note: Do not set Content-Type manually so browser adds boundary correctly
           const { data } = await api.post(API.TRANSCRIBE, formData, {
             headers: {
               Authorization: `Bearer ${token}`,
-              'Content-Type': 'multipart/form-data',
             },
           });
 
-          if (data.transcript) {
-            onTranscript(data.transcript);
+          if (data?.transcript?.trim()) {
+            onTranscript(data.transcript.trim());
           } else {
-            toast('No speech detected. Please try again.', { icon: '🎙️' });
+            toast('No clear speech detected. Please try speaking again.', { icon: '🎙️' });
           }
         } catch (err) {
           console.error('Transcription error:', err);
           toast.error(
-            err.response?.data?.error || 'Failed to transcribe audio. Please type your answer.'
+            err.response?.data?.error || 'Failed to transcribe audio. You can also type your answer.'
           );
         } finally {
           setIsTranscribing(false);
         }
       };
 
-      recorder.start();
+      // Collect data in 250ms timeslices for reliable buffer capture
+      recorder.start(250);
       setIsRecording(true);
     } catch (err) {
       if (err.name === 'NotAllowedError') {
@@ -106,7 +108,14 @@ const useDeepgramRecorder = ({ onTranscript, getToken }) => {
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+      try {
+        if (mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.requestData();
+        }
+        mediaRecorderRef.current.stop();
+      } catch (e) {
+        console.warn('Error stopping MediaRecorder:', e);
+      }
       setIsRecording(false);
     }
   }, [isRecording]);

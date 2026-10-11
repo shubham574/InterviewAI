@@ -8,9 +8,10 @@ const DashboardSkeleton = () => {
         <div className="w-full max-w-xl flex flex-col gap-4">
           <div className="h-10 bg-bg-elevated rounded-lg w-3/4"></div>
           <div className="h-6 bg-bg-elevated rounded-lg w-full mb-4"></div>
-          <div className="flex gap-4">
-            <div className="h-12 bg-bg-elevated rounded-xl w-40"></div>
-            <div className="h-12 bg-bg-elevated rounded-xl w-32"></div>
+          <div className="flex flex-wrap gap-3">
+            <div className="h-10 bg-bg-elevated rounded-xl w-36"></div>
+            <div className="h-10 bg-bg-elevated rounded-xl w-36"></div>
+            <div className="h-10 bg-bg-elevated rounded-xl w-24"></div>
           </div>
         </div>
         <div className="hidden md:flex w-32 h-32 bg-bg-elevated rounded-full shrink-0"></div>
@@ -48,6 +49,22 @@ const DashboardSkeleton = () => {
                 <div className="h-4 bg-bg-elevated rounded w-full"></div>
                 <div className="h-3 bg-bg-elevated rounded w-2/3"></div>
               </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── Topic Proficiency Skeleton ─── */}
+      <div className="bg-bg-surface border border-border-subtle rounded-3xl p-6 lg:p-8">
+        <div className="h-6 bg-bg-elevated rounded w-40 mb-6"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-bg-canvas border border-border-subtle rounded-2xl p-4 flex flex-col justify-between h-20">
+              <div className="flex justify-between items-center mb-2">
+                <div className="h-4 bg-bg-elevated rounded w-24"></div>
+                <div className="h-4 bg-bg-elevated rounded w-8"></div>
+              </div>
+              <div className="w-full bg-surface-hover rounded-full h-2"></div>
             </div>
           ))}
         </div>

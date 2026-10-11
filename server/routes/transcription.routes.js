@@ -10,11 +10,20 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB max
   fileFilter: (req, file, cb) => {
-    // Accept all audio MIME types browsers might send
-    if (file.mimetype.startsWith('audio/')) {
+    // Accept audio MIME types and browser WebM/media containers
+    const isAudio =
+      file.mimetype.startsWith('audio/') ||
+      file.mimetype.startsWith('video/') ||
+      file.mimetype.includes('webm') ||
+      file.mimetype === 'application/octet-stream' ||
+      file.mimetype === 'binary/octet-stream' ||
+      /\.(webm|ogg|wav|mp3|m4a|mp4|aac)$/i.test(file.originalname || '');
+
+    if (isAudio) {
       cb(null, true);
     } else {
-      cb(new Error('Only audio files are accepted'), false);
+      console.warn(`Rejected file upload with mimetype: ${file.mimetype}, name: ${file.originalname}`);
+      cb(new Error(`Unsupported audio format (${file.mimetype}). Please upload an audio file.`), false);
     }
   },
 });

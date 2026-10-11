@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { FiTrash2, FiBriefcase, FiList, FiVideo, FiMessageSquare, FiFileText } from 'react-icons/fi';
+import { FiTrash2, FiBriefcase, FiList, FiVideo, FiMessageSquare, FiFileText, FiCheckCircle, FiMic } from 'react-icons/fi';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
 import { API } from '../api/endpoints';
 import SEOHead from '../components/common/SEOHead';
@@ -37,6 +37,7 @@ const History = () => {
       case 'assessment': return <FiCheckCircle />;
       case 'interview': return <FiMessageSquare />;
       case 'mock': return <FiVideo />;
+      case 'live': return <FiMic />;
       default: return <FiFileText />;
     }
   };
@@ -48,6 +49,7 @@ const History = () => {
       case 'assessment': return 'bg-accent-primary/15 text-accent-primary border-accent-primary/30';
       case 'interview': return 'bg-[#3b82f615] text-[#3b82f6] border-[#3b82f630]';
       case 'mock': return 'bg-success/15 text-success border-success/30';
+      case 'live': return 'bg-accent-primary/15 text-accent-primary border-accent-primary/30';
       default: return 'bg-bg-surface text-text-primary border-border-subtle';
     }
   };
@@ -59,6 +61,7 @@ const History = () => {
       case 'assessment': return 'Assessment';
       case 'interview': return 'Interview Qs';
       case 'mock': return 'Mock Interview';
+      case 'live': return 'Live Session';
       default: return type;
     }
   };
@@ -77,7 +80,7 @@ const History = () => {
 
         {/* Filters */}
         <div className="flex flex-wrap gap-2">
-          {['all', 'analysis', 'mcq', 'assessment', 'interview', 'mock'].map(type => (
+          {['all', 'analysis', 'mcq', 'assessment', 'interview', 'mock', 'live'].map(type => (
             <button
               key={type}
               onClick={() => setFilter(type)}
@@ -87,7 +90,7 @@ const History = () => {
                   : 'bg-bg-surface text-text-secondary border-border-subtle hover:bg-bg-canvas hover:text-text-primary'
               }`}
             >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
+              {type === 'live' ? 'Live' : type.charAt(0).toUpperCase() + type.slice(1)}
             </button>
           ))}
         </div>
@@ -108,7 +111,7 @@ const History = () => {
                   <th className="py-4 px-6 font-semibold text-text-secondary text-sm w-16 text-right uppercase tracking-wider">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border-subtle">
+              <tbody className="divide-y border-border-subtle">
                 {historyItems.map((item, idx) => (
                   <tr key={idx} className="hover:bg-bg-canvas transition-colors group">
                     <td className="py-4 px-6">
@@ -130,6 +133,8 @@ const History = () => {
                       {item.historyType === 'assessment' && <Badge variant={item.score >= 70 ? 'success' : 'warning'}>{item.score}%</Badge>}
                       {item.historyType === 'mock' && item.status === 'completed' && <Badge variant="success">{item.overallFeedback?.averageScore || 0}%</Badge>}
                       {item.historyType === 'mock' && item.status !== 'completed' && <Badge variant="warning">Draft</Badge>}
+                      {item.historyType === 'live' && item.status === 'completed' && <Badge variant="success">{item.overallFeedback?.averageScore || 0}%</Badge>}
+                      {item.historyType === 'live' && item.status !== 'completed' && <Badge variant="primary">{item.difficulty || 'Live'}</Badge>}
                       {item.historyType === 'mcq' && <Badge variant="info">{item.count} Qs</Badge>}
                       {item.historyType === 'analysis' && <Badge variant="primary">{item.experienceLevel}</Badge>}
                     </td>
@@ -157,8 +162,5 @@ const History = () => {
     </div>
   );
 };
-
-// Also import FiCheckCircle since I used it above
-import { FiCheckCircle } from 'react-icons/fi';
 
 export default History;

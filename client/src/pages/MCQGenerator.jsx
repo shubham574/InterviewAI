@@ -22,6 +22,7 @@ const MCQGenerator = () => {
   const [difficulty, setDifficulty] = useState('medium');
   const [activeMCQSet, setActiveMCQSet] = useState(null);
   const [revealedAnswers, setRevealedAnswers] = useState({});
+  const [userSelections, setUserSelections] = useState({});
 
   const navigate = useNavigate();
 
@@ -38,6 +39,7 @@ const MCQGenerator = () => {
     onSuccess: (data) => {
       setActiveMCQSet(data.data);
       setRevealedAnswers({}); // Reset revealed
+      setUserSelections({});
     }
   });
 
@@ -72,6 +74,7 @@ const MCQGenerator = () => {
       const { data } = await import('../api/axios').then(m => m.default.get(API.MCQ.GET(id)));
       setActiveMCQSet(data.data);
       setRevealedAnswers({});
+      setUserSelections({});
     } catch (err) {
       console.error(err);
     }
@@ -228,19 +231,46 @@ const MCQGenerator = () => {
                     {q.options.map((opt, oIndex) => {
                       const isRevealed = revealedAnswers[qIndex];
                       const isCorrect = oIndex === q.correctAnswer;
+                      const isSelected = userSelections[qIndex] === oIndex;
                       
-                      let optClass = "p-3 rounded-lg border border-border bg-surface-hover text-text-secondary text-sm";
+                      let optClass = "p-3.5 rounded-xl border transition-all text-sm w-full text-left flex justify-between items-center cursor-pointer ";
                       
-                      if (isRevealed && isCorrect) {
-                        optClass = "p-3 rounded-lg border border-success bg-success/10 text-success font-medium flex justify-between items-center text-sm";
-                        optClass = "p-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 opacity-70 text-sm";
+                      if (isRevealed) {
+                        if (isCorrect) {
+                          optClass += "border-success bg-success/15 text-success font-semibold shadow-sm";
+                        } else if (isSelected && !isCorrect) {
+                          optClass += "border-danger bg-danger/15 text-danger font-medium";
+                        } else {
+                          optClass += "border-border-subtle bg-bg-surface opacity-60 text-text-secondary";
+                        }
+                      } else {
+                        if (isSelected) {
+                          optClass += "border-accent-primary bg-accent-primary/10 text-text-primary font-medium ring-1 ring-accent-primary";
+                        } else {
+                          optClass += "border-border-subtle bg-bg-surface hover:bg-surface-hover hover:border-accent-primary/40 text-text-secondary hover:text-text-primary";
+                        }
                       }
                       
                       return (
-                        <div key={oIndex} className={optClass}>
-                          <span>{String.fromCharCode(65 + oIndex)}. {opt}</span>
-                          {isRevealed && isCorrect && <FiCheckCircle size={18} />}
-                        </div>
+                        <button 
+                          key={oIndex} 
+                          type="button"
+                          onClick={() => {
+                            if (!isRevealed) {
+                              setUserSelections(prev => ({ ...prev, [qIndex]: oIndex }));
+                            }
+                          }}
+                          className={optClass}
+                        >
+                          <span className="flex items-center">
+                            <span className="font-mono text-text-muted mr-2.5 font-semibold">{String.fromCharCode(65 + oIndex)}.</span>
+                            <span>{opt}</span>
+                          </span>
+                          {isRevealed && isCorrect && <FiCheckCircle size={18} className="text-success shrink-0" />}
+                          {!isRevealed && isSelected && (
+                            <span className="text-[11px] font-bold uppercase tracking-wider bg-accent-primary/20 text-accent-primary px-2 py-0.5 rounded-md">Selected</span>
+                          )}
+                        </button>
                       );
                     })}
                   </div>

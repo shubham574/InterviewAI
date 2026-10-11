@@ -83,16 +83,22 @@
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: #6B7280;
   
+  --color-primary: var(--accent-primary);
+  --color-primary-light: var(--accent-glow);
+  --color-primary-glow: var(--accent-glow);
+  --color-border: var(--border-subtle);
+  --color-surface: var(--bg-surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-divider: var(--divider);
+  --color-chart-grid: var(--chart-grid);
+
   --color-accent-primary: var(--accent-primary);
   --color-accent-glow: var(--accent-glow);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-error: var(--danger);
   --color-info: var(--info);
-  
-  --color-surface-hover: var(--surface-hover);
-  --color-divider: var(--divider);
-  --color-chart-grid: var(--chart-grid);
 
   --font-display: var(--font-display);
   --font-body: var(--font-body);

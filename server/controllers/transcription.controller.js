@@ -15,14 +15,16 @@ exports.transcribeAudio = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    // Call Deepgram REST API directly — avoids SDK version issues
+    const contentType = req.file.mimetype || 'audio/webm';
+    
+    // Call Deepgram REST API directly
     const response = await fetch(
-      'https://api.deepgram.com/v1/listen?model=nova-2&language=en-IN&smart_format=true&punctuate=true',
+      'https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&punctuate=true',
       {
         method: 'POST',
         headers: {
           Authorization: `Token ${apiKey}`,
-          'Content-Type': req.file.mimetype,
+          'Content-Type': contentType,
         },
         body: req.file.buffer,
       }
@@ -31,7 +33,7 @@ exports.transcribeAudio = asyncHandler(async (req, res, next) => {
     if (!response.ok) {
       const errText = await response.text();
       console.error('Deepgram API error:', response.status, errText);
-      return next(new ApiError(502, 'Transcription service returned an error'));
+      return next(new ApiError(502, `Transcription service returned an error (${response.status})`));
     }
 
     const data = await response.json();
@@ -41,7 +43,7 @@ exports.transcribeAudio = asyncHandler(async (req, res, next) => {
     res.status(200).json({ success: true, transcript });
   } catch (err) {
     console.error('Deepgram transcription failed:', err.message);
-    return next(new ApiError(502, 'Failed to transcribe audio'));
+    return next(new ApiError(502, `Failed to transcribe audio: ${err.message}`));
   }
 });
 

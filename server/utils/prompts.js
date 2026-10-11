@@ -99,22 +99,23 @@ Return the output EXACTLY in the following JSON format without any markdown wrap
 }
 `;
 
-const liveInterviewQuestionsPrompt = (jobRole, jobDescription, count) => `
+const liveInterviewQuestionsPrompt = (jobRole, jobDescription, count, difficulty = 'medium') => `
 You are generating interview questions for a live AI interview session.
 Job Role: ${jobRole}
+Target Difficulty Level: ${difficulty.toUpperCase()} (Easy = foundational concepts and basic principles; Medium = practical problem solving and core implementations; Hard = advanced architecture, edge cases, performance optimization, and deep internals)
 Job Description:
 ${jobDescription}
 
-Generate exactly ${count} interview questions that are specifically tailored to this job description and role.
-Focus strictly on deep technical questions to evaluate the candidate's core technical competencies, coding knowledge, system design, or domain expertise related to the job description. Do NOT include behavioral, soft skills, or generic scenario-based questions.
+Generate exactly ${count} interview questions that are specifically tailored to this job description and role at the ${difficulty} difficulty level.
+Focus strictly on technical questions to evaluate the candidate's core technical competencies, coding knowledge, system design, or domain expertise related to the job description. Do NOT include behavioral, soft skills, or generic scenario-based questions.
 
 Return the output EXACTLY in the following JSON format without any markdown wrappers or extra text:
 {
   "questions": [
     {
       "question": "The interview question?",
-      "category": "Technical / Behavioral / Situational",
-      "difficulty": "Easy / Medium / Hard",
+      "category": "Technical",
+      "difficulty": "${difficulty.charAt(0).toUpperCase() + difficulty.slice(1).toLowerCase()}",
       "keyPoints": ["What a good answer should cover point 1", "point 2"]
     }
   ]

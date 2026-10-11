@@ -30,7 +30,7 @@ export const useApiMutation = (url, method = 'post', options = {}) => {
       
       const config = { headers: {} };
       if (token) config.headers.Authorization = `Bearer ${token}`;
-      if (isFormData) config.headers['Content-Type'] = 'multipart/form-data';
+      // Do not manually set 'multipart/form-data' without boundary; browser/axios injects it automatically
 
       // Pass the custom Gemini API key if set
       const geminiKey = localStorage.getItem('custom_gemini_key');

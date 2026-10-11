@@ -1,5 +1,6 @@
 const Assessment = require('../models/Assessment');
 const MockInterview = require('../models/MockInterview');
+const LiveInterview = require('../models/LiveInterview');
 const JobAnalysis = require('../models/JobAnalysis');
 const MCQ = require('../models/MCQ');
 const InterviewQuestion = require('../models/InterviewQuestion');
@@ -18,7 +19,7 @@ exports.getHistory = asyncHandler(async (req, res, next) => {
 
   const addType = (items, typeName) => {
     return items.map(item => ({
-      ...item.toObject(),
+      ...(typeof item.toObject === 'function' ? item.toObject() : item),
       historyType: typeName
     }));
   };
@@ -46,6 +47,11 @@ exports.getHistory = asyncHandler(async (req, res, next) => {
   if (type === 'all' || type === 'mock') {
     const items = await MockInterview.find({ userId }).select('-questions -responses').lean();
     results.push(...addType(items, 'mock'));
+  }
+
+  if (type === 'all' || type === 'live') {
+    const items = await LiveInterview.find({ userId }).select('-questions -responses').lean();
+    results.push(...addType(items, 'live'));
   }
 
   // Sort by date descending
@@ -80,6 +86,7 @@ exports.deleteHistoryItem = asyncHandler(async (req, res, next) => {
     case 'assessment': model = Assessment; break;
     case 'interview': model = InterviewQuestion; break;
     case 'mock': model = MockInterview; break;
+    case 'live': model = LiveInterview; break;
     default: return next(new ApiError(400, 'Invalid history type'));
   }
 

@@ -44,6 +44,12 @@ api.interceptors.request.use(
       config.headers['x-gemini-api-key'] = geminiKey;
     }
 
+    // When sending FormData, delete Content-Type so the browser automatically sets
+    // multipart/form-data with the correct boundary parameter
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     return config;
   },
   (error) => Promise.reject(error)

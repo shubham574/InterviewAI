@@ -14,7 +14,7 @@ const resolveApiKey = (req) =>
 // @route   POST /api/live-interview/start
 // @access  Private
 exports.startInterview = asyncHandler(async (req, res, next) => {
-  const { userName, jobRole, jobDescription, totalQuestions = 5 } = req.body;
+  const { userName, jobRole, jobDescription, totalQuestions = 5, difficulty = 'medium' } = req.body;
 
   if (!userName || !jobRole || !jobDescription) {
     return next(new ApiError(400, 'Please provide userName, jobRole, and jobDescription'));
@@ -22,18 +22,19 @@ exports.startInterview = asyncHandler(async (req, res, next) => {
 
   const customApiKey = resolveApiKey(req);
 
-  // Generate questions tailored to the JD
+  // Generate questions tailored to the JD and chosen difficulty
   const aiResult = await generateLiveQuestions(
     jobRole,
     jobDescription,
     totalQuestions,
+    difficulty,
     customApiKey
   );
 
   const questions = (aiResult.questions || []).map((q) => ({
     question: q.question,
     category: q.category || 'General',
-    difficulty: q.difficulty || 'Medium',
+    difficulty: q.difficulty || difficulty || 'Medium',
     keyPoints: q.keyPoints || [],
   }));
 
@@ -43,6 +44,7 @@ exports.startInterview = asyncHandler(async (req, res, next) => {
     jobRole,
     jobDescription,
     totalQuestions: questions.length,
+    difficulty,
     questions,
   });
 

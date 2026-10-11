@@ -4,8 +4,8 @@ const { liveInterviewQuestionsPrompt, liveAnswerEvalPrompt } = require('../utils
 /**
  * Generate JD-tailored interview questions for a live session
  */
-const generateLiveQuestions = async (jobRole, jobDescription, count, customApiKey = null) => {
-  const prompt = liveInterviewQuestionsPrompt(jobRole, jobDescription, count);
+const generateLiveQuestions = async (jobRole, jobDescription, count, difficulty = 'medium', customApiKey = null) => {
+  const prompt = liveInterviewQuestionsPrompt(jobRole, jobDescription, count, difficulty);
   const result = await generateContent(prompt, customApiKey);
   return result;
 };

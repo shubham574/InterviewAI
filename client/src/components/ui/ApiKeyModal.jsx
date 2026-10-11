@@ -42,7 +42,7 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-lg bg-surface border border-border rounded-2xl shadow-xl overflow-hidden"
+          className="relative w-full max-w-lg bg-bg-surface border border-border-subtle rounded-2xl shadow-xl overflow-hidden"
         >
           <div className="p-6">
             <div className="flex justify-between items-start mb-6">

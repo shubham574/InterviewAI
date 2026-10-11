@@ -23,6 +23,10 @@ const LiveInterviewSchema = new mongoose.Schema(
       required: true,
       default: 5,
     },
+    difficulty: {
+      type: String,
+      default: 'Medium',
+    },
     status: {
       type: String,
       enum: ['in-progress', 'completed'],

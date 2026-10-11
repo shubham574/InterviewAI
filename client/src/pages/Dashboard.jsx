@@ -6,7 +6,7 @@ import {
   LineChart, Line, RadialBarChart, RadialBar, Legend
 } from 'recharts';
 import { 
-  FiFileText, FiList, FiVideo, FiTrendingUp, FiArrowRight, FiActivity, FiClock
+  FiFileText, FiList, FiVideo, FiTrendingUp, FiArrowRight, FiActivity, FiClock, FiMic
 } from 'react-icons/fi';
 import { useApiQuery } from '../hooks/useApi';
 import { API } from '../api/endpoints';
@@ -49,6 +49,14 @@ const Dashboard = () => {
     { name: 'Score', value: stats?.readinessScore || 0, fill: 'var(--color-accent-primary)' }
   ];
 
+  const getActivityLink = (activity) => {
+    if (activity.type === 'assessment' && activity.id) return `/assessment/${activity.id}`;
+    if (activity.type === 'live_interview') return '/live-interview';
+    if (activity.type === 'mock_interview') return '/mock-interview';
+    if (activity.type === 'job_analysis') return '/job-analysis';
+    return '/history';
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       <SEOHead title="Dashboard" />
@@ -61,20 +69,21 @@ const Dashboard = () => {
           <h1 className="text-3xl sm:text-4xl font-bold font-display text-text-primary mb-3">
             {hasData ? `Welcome back, ${user?.firstName || 'User'}` : `Ready to start, ${user?.firstName || 'User'}?`}
           </h1>
-          <p className="text-lg text-text-secondary mb-8">
+          <p className="text-base sm:text-lg text-text-secondary mb-6 leading-relaxed">
             {hasData 
-              ? "Pick up where you left off and keep sharpening your interview skills." 
-              : "Set up your first mock interview and get real-time AI feedback."}
+              ? "Pick up where you left off and sharpen your technical interview skills with AI." 
+              : "Set up a live interview session with Shristi or take practice assessment tests."}
           </p>
-          <div className="flex gap-4">
-            <Link to="/mock-interview" className="bg-accent-primary text-white px-6 py-3 rounded-xl font-semibold text-sm hover:opacity-90 transition-all shadow-md shadow-accent-primary/20 flex items-center">
-              <FiVideo className="mr-2" /> Start New Interview
+          <div className="flex flex-wrap gap-3">
+            <Link to="/live-interview" className="bg-accent-primary text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:opacity-90 transition-all shadow-md shadow-accent-primary/20 flex items-center">
+              <FiMic className="mr-2" /> Live with Shristi
             </Link>
-            {hasData && (
-              <Link to="/history" className="bg-bg-elevated border border-border-subtle text-text-primary px-6 py-3 rounded-xl font-semibold text-sm hover:bg-surface-hover transition-colors flex items-center">
-                <FiList className="mr-2" /> View History
-              </Link>
-            )}
+            <Link to="/mock-interview" className="bg-bg-elevated border border-border-subtle text-text-primary px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-surface-hover transition-colors flex items-center">
+              <FiVideo className="mr-2" /> Mock Interview
+            </Link>
+            <Link to="/history" className="bg-bg-canvas border border-border-subtle text-text-secondary hover:text-text-primary px-4 py-2.5 rounded-xl font-medium text-sm hover:bg-surface-hover transition-colors flex items-center">
+              <FiList className="mr-2" /> History
+            </Link>
           </div>
         </div>
         
@@ -166,14 +175,20 @@ const Dashboard = () => {
           <div className="space-y-3 flex-1">
             {recentActivity?.length > 0 ? (
               recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-center p-3 rounded-xl hover:bg-surface-hover transition-colors group">
+                <Link 
+                  key={index} 
+                  to={getActivityLink(activity)}
+                  className="flex items-center p-3 rounded-xl hover:bg-surface-hover transition-colors group"
+                >
                   <div className={`p-2.5 rounded-lg mr-4 shrink-0 ${
                     activity.type === 'assessment' ? 'bg-info/10 text-info' :
                     activity.type === 'mock_interview' ? 'bg-success/10 text-success' :
+                    activity.type === 'live_interview' ? 'bg-accent-primary/10 text-accent-primary' :
                     'bg-warning/10 text-warning'
                   }`}>
                     {activity.type === 'assessment' ? <FiList size={18} /> :
                      activity.type === 'mock_interview' ? <FiVideo size={18} /> :
+                     activity.type === 'live_interview' ? <FiMic size={18} /> :
                      <FiFileText size={18} />}
                   </div>
                   <div className="flex-1 min-w-0 pr-4">
@@ -187,12 +202,12 @@ const Dashboard = () => {
                       }`}>
                         {activity.score}%
                       </span>
-                      <Link to={`/feedback/${activity.id || ''}`} className="text-[10px] uppercase tracking-wider font-semibold text-text-secondary group-hover:text-accent-primary mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[10px] uppercase tracking-wider font-semibold text-text-secondary group-hover:text-accent-primary mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         View
-                      </Link>
+                      </span>
                     </div>
                   )}
-                </div>
+                </Link>
               ))
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center py-8">
@@ -204,6 +219,30 @@ const Dashboard = () => {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* ─── Topic Performance Breakdown ─── */}
+      <div className="bg-bg-surface border border-border-subtle rounded-3xl p-6 lg:p-8">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-bold font-display text-text-primary">Topic Proficiency</h3>
+          <span className="text-xs text-text-secondary">Derived from assessments & interview evaluations</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {displayTopics.map((item, idx) => (
+            <div key={idx} className="bg-bg-canvas border border-border-subtle rounded-2xl p-4 flex flex-col justify-between hover:border-accent-primary/30 transition-colors">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-sm font-semibold text-text-primary">{item.topic}</span>
+                <span className="text-sm font-mono font-bold text-accent-primary">{item.score}%</span>
+              </div>
+              <div className="w-full bg-surface-hover rounded-full h-2 overflow-hidden">
+                <div 
+                  className="bg-accent-primary h-full rounded-full transition-all duration-500" 
+                  style={{ width: `${Math.min(100, Math.max(5, item.score))}%` }} 
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

@@ -6,13 +6,13 @@ const Badge = ({
   className = '',
 }) => {
   const variants = {
-    primary: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
-    secondary: 'bg-purple-50 text-purple-700 border border-purple-200',
-    success: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-    warning: 'bg-amber-50 text-amber-700 border border-amber-200',
-    error: 'bg-red-50 text-red-700 border border-red-200',
-    info: 'bg-blue-50 text-blue-700 border border-blue-200',
-    default: 'bg-gray-50 text-gray-700 border border-gray-200',
+    primary: 'bg-accent-primary/15 text-accent-primary border border-accent-primary/30',
+    secondary: 'bg-accent-glow/15 text-accent-glow border border-accent-glow/30',
+    success: 'bg-success/15 text-success border border-success/30',
+    warning: 'bg-warning/15 text-warning border border-warning/30',
+    error: 'bg-danger/15 text-danger border border-danger/30',
+    info: 'bg-info/15 text-info border border-info/30',
+    default: 'bg-surface-hover text-text-secondary border border-border-subtle',
   };
 
   return (
