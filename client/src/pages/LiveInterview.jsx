@@ -23,68 +23,279 @@ import { API } from '../api/endpoints';
 import { MOCK_QUESTION_COUNTS } from '../utils/constants';
 import { getGradeColor } from '../utils/helpers';
 
-// ─── Deepgram TTS Hook ────────────────────────────────────────────────────────
+// ─── Shristi Hybrid TTS Hook (Gemini Audio + Browser Web Speech API fallback) ─
 const useShristi = ({ getToken }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const audioContextRef = useRef(null);
   const sourceNodeRef = useRef(null);
+  const utteranceRef = useRef(null);
+  const abortControllerRef = useRef(null);
+  const safetyTimerRef = useRef(null);
+  const resumeIntervalRef = useRef(null);
+  const callIdRef = useRef(0);
+  const voicesRef = useRef([]);
+
+  // Pre-load voices for window.speechSynthesis
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const loadVoices = () => {
+        try {
+          const v = window.speechSynthesis.getVoices();
+          if (v && v.length > 0) {
+            voicesRef.current = v;
+          }
+        } catch (e) { /* ignore */ }
+      };
+      loadVoices();
+      window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+      return () => {
+        window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+      };
+    }
+  }, []);
 
   const stopSpeaking = useCallback(() => {
+    callIdRef.current += 1;
+
+    if (abortControllerRef.current) {
+      try {
+        abortControllerRef.current.abort();
+      } catch (e) { /* ignore */ }
+      abortControllerRef.current = null;
+    }
+
+    if (safetyTimerRef.current) {
+      clearTimeout(safetyTimerRef.current);
+      safetyTimerRef.current = null;
+    }
+
+    if (resumeIntervalRef.current) {
+      clearInterval(resumeIntervalRef.current);
+      resumeIntervalRef.current = null;
+    }
+
     if (sourceNodeRef.current) {
       try {
+        sourceNodeRef.current.onended = null;
         sourceNodeRef.current.stop();
         sourceNodeRef.current.disconnect();
       } catch (e) { /* ignore */ }
       sourceNodeRef.current = null;
     }
+
+    if (utteranceRef.current) {
+      utteranceRef.current.onend = null;
+      utteranceRef.current.onerror = null;
+      utteranceRef.current = null;
+    }
+
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) { /* ignore */ }
+    }
     setIsSpeaking(false);
   }, []);
 
-  const speak = useCallback(async (text, onEnd) => {
-    if (isMuted) {
+  // Browser Web Speech API fallback with natural English female voice
+  const speakWithBrowserSpeech = useCallback((rawText, onEnd) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      setIsSpeaking(false);
       onEnd?.();
       return;
     }
 
-    stopSpeaking();
-
     try {
-      const token = await getToken();
-      const { data } = await api.post(API.TTS, { text }, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: 'arraybuffer'
-      });
+      window.speechSynthesis.cancel();
 
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      // Clean markdown formatting for natural spoken speech
+      const cleanText = (rawText || '')
+        .replace(/[*_#`~>]/g, '')
+        .replace(/\n+/g, ' ')
+        .trim();
+
+      if (!cleanText) {
+        setIsSpeaking(false);
+        onEnd?.();
+        return;
       }
-      
-      if (audioContextRef.current.state === 'suspended') {
-        await audioContextRef.current.resume();
+
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utteranceRef.current = utterance;
+
+      let voices = window.speechSynthesis.getVoices() || [];
+      if (voices.length === 0 && voicesRef.current.length > 0) {
+        voices = voicesRef.current;
       }
-      
-      const audioBuffer = await audioContextRef.current.decodeAudioData(data);
-      const source = audioContextRef.current.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(audioContextRef.current.destination);
-      
-      setIsSpeaking(true);
-      sourceNodeRef.current = source;
-      
-      source.onended = () => {
+
+      const selectFemaleVoice = (vList) => {
+        if (!vList || vList.length === 0) return null;
+        return (
+          vList.find((v) =>
+            /Google UK English Female|Google US English|Zira|Jenny|Aria|Samantha|Victoria|Karen|Moira|Tessa|Ava|Allison|Susan/i.test(v.name || '')
+          ) ||
+          vList.find((v) => (v.lang || '').startsWith('en') && /female/i.test(v.name || '')) ||
+          vList.find((v) => (v.lang || '').startsWith('en') && !/male|david|alex|george|mark/i.test(v.name || '')) ||
+          vList.find((v) => (v.lang || '').startsWith('en')) ||
+          vList[0]
+        );
+      };
+
+      const femaleVoice = selectFemaleVoice(voices);
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      } else {
+        const onVoices = () => {
+          window.speechSynthesis.removeEventListener('voiceschanged', onVoices);
+          const updated = window.speechSynthesis.getVoices() || [];
+          const matched = selectFemaleVoice(updated);
+          if (matched) utterance.voice = matched;
+        };
+        window.speechSynthesis.addEventListener('voiceschanged', onVoices);
+      }
+
+      utterance.rate = 1.0;
+      utterance.pitch = 1.05; // Slightly elevated pitch for natural female tone
+
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        if (resumeIntervalRef.current) {
+          clearInterval(resumeIntervalRef.current);
+          resumeIntervalRef.current = null;
+        }
+        if (safetyTimerRef.current) {
+          clearTimeout(safetyTimerRef.current);
+          safetyTimerRef.current = null;
+        }
+        utteranceRef.current = null;
         setIsSpeaking(false);
         onEnd?.();
       };
-      
-      source.start(0);
-    } catch (err) {
-      console.error("TTS Failed:", err);
-      toast.error("Failed to generate Shristi's voice.");
+
+      utterance.onend = finish;
+      utterance.onerror = (e) => {
+        console.warn('SpeechSynthesis event error:', e);
+        finish();
+      };
+
+      setIsSpeaking(true);
+      try {
+        window.speechSynthesis.resume();
+      } catch (e) { /* ignore */ }
+      window.speechSynthesis.speak(utterance);
+
+      // Chrome long-utterance keepalive fix
+      if (resumeIntervalRef.current) clearInterval(resumeIntervalRef.current);
+      resumeIntervalRef.current = setInterval(() => {
+        if (!window.speechSynthesis.speaking) {
+          if (resumeIntervalRef.current) {
+            clearInterval(resumeIntervalRef.current);
+            resumeIntervalRef.current = null;
+          }
+        } else {
+          window.speechSynthesis.pause();
+          window.speechSynthesis.resume();
+        }
+      }, 5000);
+
+      const maxSeconds = Math.max(6, cleanText.length / 10 + 3);
+      safetyTimerRef.current = setTimeout(() => {
+        if (resumeIntervalRef.current) {
+          clearInterval(resumeIntervalRef.current);
+          resumeIntervalRef.current = null;
+        }
+        if (!finished) {
+          finish();
+        }
+      }, maxSeconds * 1000);
+    } catch (e) {
+      console.warn('Browser speech synthesis failed:', e);
       setIsSpeaking(false);
-      onEnd?.(); // fail gracefully
+      onEnd?.();
     }
-  }, [isMuted, getToken, stopSpeaking]);
+  }, []);
+
+  const speak = useCallback(
+    async (text, onEnd) => {
+      if (isMuted) {
+        onEnd?.();
+        return;
+      }
+
+      stopSpeaking();
+      const currentCallId = ++callIdRef.current;
+
+      // Hybrid pipeline: Attempt external backend audio generation with quick timeout fallback
+      try {
+        const token = await getToken();
+        const geminiKey = localStorage.getItem('custom_gemini_key');
+        const headers = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        if (geminiKey) headers['x-gemini-api-key'] = geminiKey;
+
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        // 3.5s timeout for TTS request so the interview flow is never stalled
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+        }, 3500);
+
+        const response = await api.post(
+          API.TTS,
+          { text },
+          {
+            headers,
+            responseType: 'arraybuffer',
+            signal: controller.signal,
+          }
+        );
+
+        clearTimeout(timeoutId);
+
+        if (callIdRef.current !== currentCallId) return;
+
+        const contentType = response.headers?.['content-type'] || '';
+        if (contentType.includes('application/json') || !response.data || response.data.byteLength < 100) {
+          throw new Error('TTS response was non-audio or empty fallback');
+        }
+
+        if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+          audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        if (audioContextRef.current.state === 'suspended') {
+          await audioContextRef.current.resume();
+        }
+
+        const audioBuffer = await audioContextRef.current.decodeAudioData(response.data.slice(0));
+        if (callIdRef.current !== currentCallId) return;
+
+        const source = audioContextRef.current.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContextRef.current.destination);
+
+        setIsSpeaking(true);
+        sourceNodeRef.current = source;
+
+        source.onended = () => {
+          setIsSpeaking(false);
+          sourceNodeRef.current = null;
+          onEnd?.();
+        };
+
+        source.start(0);
+      } catch (err) {
+        if (callIdRef.current !== currentCallId) return;
+        // Fall back seamlessly to browser Web Speech API — NEVER show error toasts or block interview
+        speakWithBrowserSpeech(text, onEnd);
+      }
+    },
+    [isMuted, getToken, stopSpeaking, speakWithBrowserSpeech]
+  );
 
   const toggleMute = useCallback(() => {
     if (!isMuted) stopSpeaking();
@@ -94,8 +305,8 @@ const useShristi = ({ getToken }) => {
   return { speak, stopSpeaking, isSpeaking, isMuted, toggleMute };
 };
 
-// ─── Deepgram Voice Recorder ──────────────────────────────────────────────────
-const useDeepgramRecorder = ({ onTranscriptComplete, getToken }) => {
+// ─── Voice Recorder Hook (Gemini STT) ─────────────────────────────────────────
+const useVoiceRecorder = ({ onTranscriptComplete, getToken }) => {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
@@ -131,7 +342,10 @@ const useDeepgramRecorder = ({ onTranscriptComplete, getToken }) => {
         streamRef.current?.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: cleanType });
         if (!blob || blob.size < 50) {
-          toast('No audio detected. Please speak clearly into your mic.', { icon: '🎙️' });
+          toast('No audible speech detected. Please speak louder into your microphone, or use the text mode toggle to type.', {
+            icon: '🎙️',
+            duration: 4000,
+          });
           setIsTranscribing(false);
           return;
         }
@@ -139,20 +353,27 @@ const useDeepgramRecorder = ({ onTranscriptComplete, getToken }) => {
         setIsTranscribing(true);
         try {
           const token = await getToken();
+          const geminiKey = localStorage.getItem('custom_gemini_key');
+          const headers = { Authorization: `Bearer ${token}` };
+          if (geminiKey) headers['x-gemini-api-key'] = geminiKey;
+
           const formData = new FormData();
           formData.append('audio', blob, 'recording.webm');
           const { data } = await api.post(API.TRANSCRIBE, formData, {
-            headers: { Authorization: `Bearer ${token}` },
+            headers,
           });
 
           if (data?.transcript?.trim()) {
             onTranscriptRef.current?.(data.transcript.trim());
           } else {
-            toast('No clear speech detected. Please speak again or type your answer.', { icon: '🎙️' });
+            toast('No audible speech detected. Please speak louder into your microphone, or use the "Type Answer Instead" toggle to type.', {
+              icon: '🎙️',
+              duration: 4000,
+            });
           }
         } catch (err) {
           console.error('Transcription error:', err);
-          toast.error(err.response?.data?.error || 'Transcription failed. You can also switch to typing.');
+          toast.error(err.response?.data?.error || 'Transcription failed. Please speak louder or switch to typing.');
         } finally {
           setIsTranscribing(false);
         }
@@ -168,7 +389,7 @@ const useDeepgramRecorder = ({ onTranscriptComplete, getToken }) => {
   }, [getToken]);
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       try {
         if (mediaRecorderRef.current.state === 'recording') {
           mediaRecorderRef.current.requestData();
@@ -177,16 +398,28 @@ const useDeepgramRecorder = ({ onTranscriptComplete, getToken }) => {
       } catch (e) {
         console.warn('Error stopping MediaRecorder:', e);
       }
-      setIsRecording(false);
     }
-  }, [isRecording]);
+    setIsRecording(false);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        try { mediaRecorderRef.current.stop(); } catch (e) {}
+      }
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
 
   const toggleRecording = useCallback(() => {
     if (isRecording) stopRecording(); else startRecording();
   }, [isRecording, startRecording, stopRecording]);
 
-  return { isRecording, isTranscribing, error, toggleRecording, stopRecording };
+  return { isRecording, isTranscribing, error, toggleRecording, startRecording, stopRecording };
 };
+
+// Backwards-compatibility alias
+const useDeepgramRecorder = useVoiceRecorder;
 
 // ─── Shristi Avatar ────────────────────────────────────────────────────────────
 const ShristiAvatar = ({ isSpeaking, isThinking }) => (
@@ -379,9 +612,11 @@ const LiveInterview = () => {
           setCurrentQIndex(nextIndex);
           setAttempt(1);
           setPreviousAnswer(null);
+          setTypedAnswer('');
           setShristiMessage(`${result.shristiResponse}\n\nQuestion ${nextIndex + 1}: ${nextQ.question}`);
         } else {
           // All questions done — complete interview
+          setTypedAnswer('');
           setShristiMessage(result.shristiResponse);
           const completeDelay = isMuted ? 800 : Math.max(result.shristiResponse.length * 50, 1500);
           setTimeout(async () => {
@@ -397,19 +632,35 @@ const LiveInterview = () => {
     }
   };
 
+  const introTimeoutRef = useRef(null);
+  const introFinishedRef = useRef(false);
+
   // ── Voice recording
   const handleTranscriptComplete = useCallback(async (t) => {
-    setChatHistory(prev => [...prev, { id: Date.now().toString(), sender: 'user', text: t }]);
-    await handleSubmitAnswer(t);
-  }, [currentQIndex, attempt, previousAnswer, session]);
+    if (isTextMode) {
+      setTypedAnswer((prev) => (prev ? `${prev.trimEnd()} ${t}` : t));
+      toast.success('Speech transcribed to answer field! Review and press Send.');
+    } else {
+      setTypedAnswer(t);
+      setChatHistory(prev => [...prev, { id: Date.now().toString(), sender: 'user', text: t }]);
+      await handleSubmitAnswer(t);
+    }
+  }, [isTextMode, currentQIndex, attempt, previousAnswer, session]);
 
-  const { isRecording, isTranscribing, error: recorderError, toggleRecording } = useDeepgramRecorder({
+  const { isRecording, isTranscribing, error: recorderError, toggleRecording, startRecording } = useVoiceRecorder({
     onTranscriptComplete: handleTranscriptComplete,
     getToken,
   });
 
   // ── Present First Question ONLY after Intro finishes
   const presentFirstQuestion = useCallback((targetSession) => {
+    if (introTimeoutRef.current) {
+      clearTimeout(introTimeoutRef.current);
+      introTimeoutRef.current = null;
+    }
+    if (introFinishedRef.current) return;
+    introFinishedRef.current = true;
+
     const s = targetSession || session;
     if (!s || !s.questions || s.questions.length === 0) return;
     setIsIntroPhase(false);
@@ -425,10 +676,10 @@ const LiveInterview = () => {
     speak(q1Text, () => {
       setShristiHasSpoken(true);
       if (!isMuted && !isTextMode) {
-        toggleRecording();
+        startRecording();
       }
     });
-  }, [session, isMuted, isTextMode, speak, toggleRecording]);
+  }, [session, isMuted, isTextMode, speak, startRecording]);
 
   // ── Skip Intro action
   const handleSkipIntro = useCallback(() => {
@@ -439,15 +690,16 @@ const LiveInterview = () => {
   // ── Step 1: Shristi Intro when interview screen loads
   useEffect(() => {
     if (screen === SCREEN.INTERVIEW && session && isIntroPhase && chatHistory.length === 0) {
+      introFinishedRef.current = false;
       const introGreeting = `Hello ${userName}! I'm Shristi, your AI interviewer today. We'll be going through ${session.totalQuestions} ${session.difficulty || difficulty} questions tailored to your ${session.jobRole} role. Listen carefully to each question, and answer naturally. Let's get started!`;
 
       setChatHistory([{ id: 'intro', sender: 'shristi', text: introGreeting }]);
 
       speak(introGreeting, () => {
         // ONLY AFTER Shristi finishes her intro, show and speak Question 1!
-        setTimeout(() => {
+        introTimeoutRef.current = setTimeout(() => {
           presentFirstQuestion(session);
-        }, 700);
+        }, 600);
       });
     }
   }, [screen, session, isIntroPhase, chatHistory.length, userName, difficulty, speak, presentFirstQuestion]);
@@ -455,16 +707,30 @@ const LiveInterview = () => {
   // ── Speak Shristi's subsequent responses in interview
   useEffect(() => {
     if (shristiMessage && screen === SCREEN.INTERVIEW && !isIntroPhase) {
-      setChatHistory(prev => [...prev, { id: Date.now().toString(), sender: 'shristi', text: shristiMessage }]);
+      setChatHistory(prev => {
+        const last = prev[prev.length - 1];
+        if (last && last.sender === 'shristi' && last.text === shristiMessage) return prev;
+        return [...prev, { id: Date.now().toString(), sender: 'shristi', text: shristiMessage }];
+      });
       speak(shristiMessage, () => {
          setShristiHasSpoken(true);
          // Automatically start listening when Shristi finishes speaking question
          if (!isMuted && !isTextMode) {
-           toggleRecording();
+           startRecording();
          }
       });
     }
-  }, [shristiMessage, screen, isIntroPhase, isMuted, isTextMode, speak, toggleRecording]);
+  }, [shristiMessage, screen, isIntroPhase, isMuted, isTextMode, speak, startRecording]);
+
+  // Cleanup speech and pending timeouts on unmount
+  useEffect(() => {
+    return () => {
+      stopSpeaking();
+      if (introTimeoutRef.current) {
+        clearTimeout(introTimeoutRef.current);
+      }
+    };
+  }, [stopSpeaking]);
 
   // ── Submit typed answer
   const handleSendTypedAnswer = async (e) => {
@@ -864,9 +1130,15 @@ const LiveInterview = () => {
                        <textarea
                          value={typedAnswer}
                          onChange={(e) => setTypedAnswer(e.target.value)}
-                         placeholder="Type your answer here..."
+                         placeholder={
+                           isRecording
+                             ? '🎙️ Recording... click mic button to stop and transcribe'
+                             : isTranscribing
+                             ? '⏳ Transcribing your speech...'
+                             : 'Type your answer here, or click mic to dictate...'
+                         }
                          rows={2}
-                         disabled={isSubmitting || isThinking}
+                         disabled={isSubmitting || isThinking || isTranscribing}
                          className="flex-1 px-4 py-2.5 rounded-xl border border-border-subtle bg-bg-canvas text-text-primary text-sm focus:border-accent-primary focus:outline-none resize-none"
                          onKeyDown={(e) => {
                            if (e.key === 'Enter' && !e.shiftKey) {
@@ -876,8 +1148,21 @@ const LiveInterview = () => {
                          }}
                        />
                        <button
+                         type="button"
+                         onClick={toggleRecording}
+                         disabled={isSubmitting || isThinking || isTranscribing}
+                         className={`p-2.5 rounded-xl border border-border-subtle transition-all cursor-pointer shrink-0 flex items-center justify-center ${
+                           isRecording
+                             ? 'bg-danger text-white animate-pulse'
+                             : 'bg-bg-canvas hover:bg-bg-surface text-text-primary'
+                         }`}
+                         title={isRecording ? 'Stop recording & transcribe' : 'Dictate answer with microphone'}
+                       >
+                         {isRecording ? <FiStopCircle className="w-5 h-5" /> : <FiMic className="w-5 h-5" />}
+                       </button>
+                       <button
                          type="submit"
-                         disabled={isSubmitting || isThinking || !typedAnswer.trim()}
+                         disabled={isSubmitting || isThinking || !typedAnswer.trim() || isRecording || isTranscribing}
                          className="bg-accent-primary text-white px-5 rounded-xl font-bold hover:bg-accent-glow transition-all disabled:opacity-50 cursor-pointer text-sm shrink-0 flex items-center justify-center"
                        >
                          {isSubmitting ? <FiLoader className="animate-spin" /> : 'Send'}
@@ -1072,7 +1357,7 @@ const LiveInterview = () => {
           <div className="space-y-4">
             {[
               { icon: FiFileText, step: '1', title: 'Paste your Job Description', desc: 'Shristi reads the JD and generates role-specific questions tailored to the exact skills required.' },
-              { icon: FiMic, step: '2', title: 'Answer by voice automatically', desc: 'Use the microphone for a realistic feel. Deepgram transcribes your speech accurately when you finish.' },
+              { icon: FiMic, step: '2', title: 'Answer by voice automatically', desc: 'Use the microphone for a realistic feel. Gemini AI transcribes your speech accurately when you finish.' },
               { icon: FiBriefcase, step: '3', title: 'Shristi evaluates live', desc: 'She evaluates your answer, gives feedback, and either asks a follow-up or moves to the next question.' },
               { icon: FiStar, step: '4', title: 'Get a full performance report', desc: 'After the interview, see your score per question, strengths, areas to improve, and Shristi\'s final recommendation.' },
             ].map(({ icon: Icon, step, title, desc }) => (

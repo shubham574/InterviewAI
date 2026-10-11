@@ -5,18 +5,19 @@ const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Store audio in memory (no disk I/O needed — we stream directly to Deepgram)
+// Store audio in memory (no disk I/O needed — processed directly with Google Gemini)
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB max
   fileFilter: (req, file, cb) => {
     // Accept audio MIME types and browser WebM/media containers
+    const mtype = (file.mimetype || '').toLowerCase();
     const isAudio =
-      file.mimetype.startsWith('audio/') ||
-      file.mimetype.startsWith('video/') ||
-      file.mimetype.includes('webm') ||
-      file.mimetype === 'application/octet-stream' ||
-      file.mimetype === 'binary/octet-stream' ||
+      mtype.startsWith('audio/') ||
+      mtype.startsWith('video/') ||
+      mtype.includes('webm') ||
+      mtype === 'application/octet-stream' ||
+      mtype === 'binary/octet-stream' ||
       /\.(webm|ogg|wav|mp3|m4a|mp4|aac)$/i.test(file.originalname || '');
 
     if (isAudio) {
